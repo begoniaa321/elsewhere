@@ -1,0 +1,23 @@
+/* 透明磨砂（默认气泡）：仿 iMessage 玻璃，半透明 + 背后壁纸模糊，没有白色亮边 */
+.message.message-sent,
+.message.message-received {
+background: rgba(120,130,140,0.38) !important;
+-webkit-backdrop-filter: blur(20px) saturate(1.4) !important;
+backdrop-filter: blur(20px) saturate(1.4) !important;
+border: 1px solid rgba(255,255,255,0.10) !important;
+box-shadow: none !important;
+color: #1f2730 !important;
+border-radius: 20px !important;
+}
+.row.ai.tail .message.message-received { border-bottom-left-radius: 20px !important; }
+.row.human.tail .message.message-sent { border-bottom-right-radius: 20px !important; }
+.message.message-sent .meta,
+.message.message-received .meta { color: rgba(31,39,48,0.55) !important; }
+/* 磨砂玻璃主题选了「浅色字」（配深色壁纸）：气泡也变深色磨砂 + 白字 */
+:root[data-look="glass"][data-ink="light"] .message.message-sent,
+:root[data-look="glass"][data-ink="light"] .message.message-received {
+background: rgba(24,30,40,0.40) !important;
+border-color: rgba(255,255,255,0.12) !important;
+color: #F6F8FA !important;
+}
+:root[data-look="glass"][data-ink="light"] .message .meta { color: rgba(246,248,250,0.6) !important; }

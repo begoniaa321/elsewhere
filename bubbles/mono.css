@@ -1,0 +1,62 @@
+
+.message {
+position: relative !important;
+overflow: visible !important;
+font-weight: 500 !important;
+line-height: 1.4 !important;
+word-break: break-word !important;
+max-width: min(75vw, 560px) !important;   /* 原来 100%，长消息会一直伸到屏幕最左边 */
+margin: 8px 0 !important;
+clear: both !important;
+box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
+.message-sent {
+float: right !important;
+background: #3a3a3c !important; 
+color: #ffffff !important;
+border-radius: 26px 29px 4px 29px !important;
+padding: 10px 14px !important;
+margin-right: 12px !important;
+}
+.message-received {
+float: left !important;
+background: #e9e9e9 !important; 
+color: #000000 !important;
+border-radius: 29px 26px 29px 4px !important;
+padding: 10px 14px !important;
+margin-left: 12px !important;
+}
+
+.message::after {
+content: '' !important;
+position: absolute !important;
+width: 0 !important;
+height: 0 !important;
+border-style: solid !important;
+z-index: 1 !important;
+}
+
+.message.message-sent::after {
+bottom: 0 !important;
+right: -10px !important;
+border-width: 18px 0 0px 17px !important;
+border-color: transparent transparent transparent #3a3a3c !important;
+}
+
+.message.message-received::after {
+bottom: 0 !important;
+left: -10px !important;
+border-width: 18px 17px 0px 0 !important;
+border-color: transparent #e9e9eb transparent transparent !important;
+}
+
+.message-sent + .message-sent,
+.message-received + .message-received {
+margin-top: 4px !important;
+}
+
+.message-sent + .message-sent::after,
+.message-received + .message-received::after {
+display: none !important;
+}

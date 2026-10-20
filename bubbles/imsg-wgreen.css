@@ -1,0 +1,76 @@
+/* =====================================
+   仿IMessage（白绿milk版）
+===================================== */
+
+.message {
+  position: relative !important;
+  line-height: 1.6 !important;
+  word-break: break-word !important;
+  overflow: visible !important;
+  width: fit-content !important;
+  max-width: min(75vw, 560px) !important;
+  font-size: 14px !important;
+  min-width: 60px !important;
+  min-height: 35px !important;
+  display: block !important;
+  transform: translateY(0px) !important; 
+  margin-top: 4px !important;
+}
+
+.message.message-received,
+.message.message-sent {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  text-align: left !important;
+  z-index: 1 !important;
+  box-sizing: border-box !important;
+}
+
+/* 左侧 */
+.message.message-received {
+  padding: 8px 13px 9px 16px !important;
+}
+
+/* 右侧 */
+.message.message-sent {
+  padding: 8px 14px 9px 14px !important; 
+}
+
+/* 左侧字体 */
+.message.message-received,
+.message.message-received * {
+  color: #333333 !important;
+}
+
+/* 右侧字体 */
+.message.message-sent,
+.message.message-sent * {
+  color: #333333 !important;
+}
+
+/* 气泡背景 */
+.message.message-received::before,
+.message.message-sent::before {
+  content: "" !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  z-index: -1 !important;
+  border-style: solid !important;
+  border-image-repeat: stretch !important;
+  border-image-outset: 0px !important;
+  pointer-events: none;
+  border-image-slice: 271 639 392 601 fill !important;
+  border-image-width: 15px 36px 22px 33px !important;
+}
+
+.message.message-received::before {
+  border-image-source: url("img/imsg-black-6.png") !important;
+}
+
+.message.message-sent::before {
+  border-image-source: url("img/imsg-green-sent.png") !important;
+}

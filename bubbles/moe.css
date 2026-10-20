@@ -1,0 +1,89 @@
+/* ========== 冷脸萌热脸萌气泡风格（仅气泡） ========== */
+
+/* 气泡通用样式 */
+.message.message-sent,
+.message.message-received {
+border: none !important;
+border-radius: 14px !important;
+color: #555555 !important;
+position: relative !important;
+padding: 6px 14px !important;
+box-shadow: 
+0 2px 4px rgba(0,0,0,0.1),
+0 6px 16px rgba(0,0,0,0.12),
+inset 0 1px 0 rgba(255,255,255,0.6) !important;
+overflow: visible !important;
+font-weight: normal !important;
+font-size: 13px !important;
+line-height: 1.35 !important;
+backdrop-filter: blur(10px) !important;
+-webkit-backdrop-filter: blur(10px) !important;
+}
+
+/* 我发的气泡 - 浅灰实色带一点透明 */
+.message.message-sent {
+background: linear-gradient(135deg, rgba(248,248,248,0.85) 0%, rgba(232,232,232,0.8) 100%) !important;
+}
+
+/* 对方发的气泡 - 中灰实色带一点透明 */
+.message.message-received {
+background: linear-gradient(135deg, rgba(228,228,228,0.85) 0%, rgba(208,208,208,0.8) 100%) !important;
+}
+
+/* ---- 颜文字贴纸 ---- */
+
+/* 我发的（右边气泡）- 左上角冷脸萌 ˵＞𖥦＜˵ */
+.message.message-sent::after {
+content: "˵＞𖥦＜˵" !important;
+position: absolute !important;
+top: -9px !important;
+left: -4px !important;
+font-size: 10px !important;
+color: #000000 !important;
+background: transparent !important;
+border: none !important;
+border-radius: 0 !important;
+padding: 0 !important;
+white-space: nowrap !important;
+pointer-events: none !important;
+line-height: 1 !important;
+text-shadow: 0 1px 2px rgba(255,255,255,0.5) !important;
+}
+
+/* 对方发的（左边气泡）- 右上角热脸萌 ˶ᗜ - ᗜ˶ */
+.message.message-received::after {
+content: "˶ᗜ - ᗜ˶" !important;
+position: absolute !important;
+top: -9px !important;
+right: -4px !important;
+font-size: 10px !important;
+color: #000000 !important;
+background: transparent !important;
+border: none !important;
+border-radius: 0 !important;
+padding: 0 !important;
+white-space: nowrap !important;
+pointer-events: none !important;
+line-height: 1 !important;
+text-shadow: 0 1px 2px rgba(255,255,255,0.5) !important;
+}
+
+/* ---- 去掉 ::before 默认无装饰 ---- */
+.message.message-sent::before,
+.message.message-received::before {
+display: none !important;
+}
+
+/* 图片消息去掉气泡和贴纸 */
+.message.message-image-bubble-none {
+background: transparent !important;
+border: none !important;
+padding: 0 !important;
+backdrop-filter: none !important;
+-webkit-backdrop-filter: none !important;
+box-shadow: none !important;
+}
+.message.message-image-bubble-none::before,
+.message.message-image-bubble-none::after {
+display: none !important;
+}
