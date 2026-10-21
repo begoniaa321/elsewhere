@@ -1533,29 +1533,47 @@
   #micBtn, #terminalBtn, #sessionBtn, #sessionPop{ display:none !important; }
   #cardPanel{ z-index:270; }   /* 从 Home(190) 点进来，盖住 Home 和底部导航(260) */
   /* 朋友圈（10-22）：跟字卡库一样从 Home 点进来；顶上一张封面（主页大卡片那张图）+ 她的名字头像，下面一条条像微信 */
-  #momPanel{ z-index:270; }
-  #momPanel .cv-title{ flex:1; }
-  .mom-cover{ position:relative; height:220px; margin-bottom:34px; background:var(--hc-cover, var(--menu-wall-default)) center/cover no-repeat; }
-  .mom-me{ position:absolute; right:16px; bottom:-26px; display:flex; align-items:flex-end; gap:12px; }
-  .mom-me b{ margin-bottom:32px; color:#fff; font-size:17px; font-weight:600; text-shadow:0 1px 4px rgba(0,0,0,.45); }
-  .mom-me-av, .mom-av{ flex:none; display:grid; place-items:center; border-radius:10px; background:rgba(230,236,243,.95) center/cover no-repeat; color:var(--text-soft); }
-  .mom-me-av{ width:64px; height:64px; font-size:24px; box-shadow:0 0 0 2px rgba(255,255,255,.9); }
-  .mom-post{ display:flex; gap:11px; padding:14px 16px; border-bottom:1px solid var(--hairline); }
-  .mom-av{ width:42px; height:42px; font-size:17px; }
+  /* 10-22 改成微信那样：白底；封面铺到最顶（灵动岛后面也是图）；顶栏浮在封面上，翻过封面才变实心 */
+  #momPanel{ z-index:270; background:#fff; }
+  #momPanel::before, :root[data-listwall] #momPanel::before, :root[data-look][data-ink] #momPanel::before{ display:none; }
+  #momPanel > .mom-head{ position:absolute; top:0; left:0; right:0; z-index:4; border-bottom:1px solid transparent; color:#fff; transition:background .2s, color .2s; }   /* 要用 #id 压过后面的 .conv-panel > * 和 .cv-head */
+  .mom-head .cv-title{ flex:1; margin-right:0; color:inherit; opacity:0; transition:opacity .2s; }
+  .mom-head .sp-back{ color:inherit; filter:drop-shadow(0 1px 2px rgba(0,0,0,.35)); }
+  #momPanel > .mom-head.solid{ background:rgba(247,247,247,.96); color:#191919; border-bottom-color:rgba(0,0,0,.06); }
+  .mom-head.solid .cv-title{ opacity:1; }
+  .mom-head.solid .sp-back{ filter:none; }
+  .mom-scroll{ overscroll-behavior-y:none; background:#fff; }
+  .mom-hero{ position:relative; height:calc(var(--sa-top, env(safe-area-inset-top)) + 320px); overflow:visible; }
+  .mom-cover{ position:absolute; inset:0; transform-origin:50% 0; background:#d9d9d9 var(--hc-cover, var(--menu-wall-default)) center/cover no-repeat; will-change:transform; }
+  .mom-feed{ position:relative; z-index:1; will-change:transform; }   /* 不铺底色：名字头像那截要压在封面上 */
+  .mom-me{ display:flex; justify-content:flex-end; align-items:flex-start; gap:16px; padding:0 16px; margin-top:-46px; height:96px; }
+  .mom-me b{ margin-top:8px; color:#fff; font-size:19px; font-weight:600; text-shadow:0 1px 3px rgba(0,0,0,.4); }
+  .mom-me-av, .mom-av{ flex:none; display:grid; place-items:center; border-radius:8px; background:#e9e9ec center/cover no-repeat; color:#888; }
+  .mom-me-av{ width:72px; height:72px; font-size:26px; }
+  .mom-post{ display:flex; gap:11px; padding:16px 16px 14px; border-bottom:1px solid rgba(0,0,0,.06); }
+  .mom-av{ width:44px; height:44px; font-size:18px; }
   .mom-main{ flex:1; min-width:0; }
-  .mom-name{ font-size:15px; font-weight:600; color:var(--accent, var(--text)); }
-  .mom-text{ margin-top:4px; font-size:15.5px; line-height:1.6; color:var(--text); white-space:pre-wrap; word-break:break-word; }
-  .mom-img{ display:block; margin-top:8px; max-width:68%; max-height:260px; border-radius:6px; object-fit:cover; }
-  .mom-foot{ display:flex; align-items:center; gap:12px; margin-top:8px; font-size:12.5px; color:var(--text-faint); }
-  .mom-del{ border:0; background:none; padding:0; color:var(--text-faint); font:inherit; font-size:12.5px; }
-  .mom-acts{ margin-left:auto; display:flex; gap:6px; }
-  .mom-act{ padding:3px 10px; border-radius:999px; border:1px solid var(--hairline); background:rgba(255,255,255,.5); color:var(--text-soft); font:inherit; font-size:12.5px; }
-  .mom-act.on{ color:#e5534b; }
-  .mom-box{ margin-top:8px; padding:6px 10px; border-radius:6px; background:rgba(140,160,176,.12); font-size:14px; line-height:1.65; color:var(--text); }
-  .mom-likes{ color:var(--text-soft); padding-bottom:3px; }
-  .mom-likes + .mom-cm{ border-top:1px solid var(--hairline); padding-top:4px; }
-  .mom-cm{ word-break:break-word; }
-  .mom-cm b{ font-weight:600; color:var(--text-soft); }
+  .mom-name{ font-size:16px; font-weight:600; color:#576b95; }
+  .mom-text{ margin-top:3px; font-size:16px; line-height:1.55; color:#191919; white-space:pre-wrap; word-break:break-word; }
+  .mom-img{ display:block; margin-top:8px; max-width:66%; max-height:280px; border-radius:2px; object-fit:cover; }
+  .mom-foot{ display:flex; align-items:center; gap:12px; margin-top:8px; font-size:13px; color:#b2b2b2; }
+  .mom-del{ border:0; background:none; padding:0; color:#576b95; font:inherit; font-size:13px; }
+  .mom-more-wrap{ position:relative; margin-left:auto; display:flex; align-items:center; }
+  .mom-more{ width:34px; height:22px; border:0; border-radius:4px; background:#f7f7f7; display:flex; align-items:center; justify-content:center; gap:4px; padding:0; }
+  .mom-more i{ width:5px; height:5px; border-radius:50%; background:#576b95; }
+  /* 点「··」从左边滑出来的小黑条：赞 | 评论 */
+  .mom-menu{ position:absolute; right:42px; top:50%; display:flex; align-items:center; height:38px; padding:0 4px; border-radius:6px; background:#4c4c4c;
+    transform:translateY(-50%) scaleX(0); transform-origin:100% 50%; opacity:0; pointer-events:none; transition:transform .18s cubic-bezier(.2,.8,.2,1), opacity .12s; white-space:nowrap; }
+  .mom-more-wrap.open .mom-menu{ transform:translateY(-50%) scaleX(1); opacity:1; pointer-events:auto; }
+  .mom-menu button{ border:0; background:none; color:#fff; font:inherit; font-size:14px; padding:0 16px; height:100%; }
+  .mom-menu i{ width:1px; height:18px; background:rgba(0,0,0,.35); }
+  .mom-box{ position:relative; margin-top:10px; padding:5px 10px; border-radius:4px; background:#f3f3f5; font-size:14.5px; line-height:1.6; color:#191919; }
+  .mom-box::before{ content:""; position:absolute; top:-6px; left:12px; border:6px solid transparent; border-top:0; border-bottom-color:#f3f3f5; }
+  .mom-likes{ color:#576b95; padding:2px 0; }
+  .mom-likes b, .mom-cm b{ font-weight:600; color:#576b95; }
+  .mom-likes + .mom-cm{ border-top:1px solid rgba(0,0,0,.06); padding-top:4px; }
+  .mom-cm{ word-break:break-word; padding:1px 0; }
+  #momPanel .cl-empty{ color:#999; }
   .mom-bar{ display:flex; gap:8px; padding:8px 12px calc(8px + env(safe-area-inset-bottom)); border-top:1px solid var(--hairline); background:rgba(248,250,252,.92); }
   .mom-bar.hidden{ display:none; }
   .mom-bar{ margin-bottom:var(--keyboard-offset, 0px); }   /* 键盘弹起来时跟聊天输入框一样往上让 */
@@ -9280,12 +9298,16 @@ var Moments = (function(){
   const panel = document.createElement("div");
   panel.className = "conv-panel hidden";
   panel.id = "momPanel";
-  panel.innerHTML = `<div class="cv-head">
+  // 10-22 她要微信那样：封面铺到最顶上（返回/相机浮在封面上，翻过封面顶栏才变实心），在顶上往下拉封面会放大、有韧劲、松手弹回
+  panel.innerHTML = `<div class="cv-head mom-head">
       <button type="button" class="sp-back" id="momBack" aria-label="返回"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
       <div class="cv-title">朋友圈</div>
       <button type="button" class="sp-back mom-new" id="momNew" aria-label="发朋友圈"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.8l1.4-2h4.6l1.4 2h1.8A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.5" r="3.4"/></svg></button>
     </div>
-    <div class="cv-body" id="momBody"></div>
+    <div class="cv-body mom-scroll" id="momBody">
+      <div class="mom-hero" id="momHero"><div class="mom-cover" id="momCover" role="button" aria-label="换封面"></div></div>
+      <div class="mom-feed" id="momFeed"></div>
+    </div>
     <div class="mom-bar hidden" id="momBar"><input id="momCmt" type="text" maxlength="200" enterkeyhint="send" placeholder="评论"><button type="button" class="cl-btn" id="momCmtGo">发送</button></div>
     <div class="mom-sheet hidden" id="momSheet">
       <div class="mom-sheet-card glass">
@@ -9296,8 +9318,15 @@ var Moments = (function(){
     </div>`;
   document.body.appendChild(panel);
   const $m = (s) => panel.querySelector(s);
-  const body = $m("#momBody"), bar = $m("#momBar"), cmtInp = $m("#momCmt"), sheet = $m("#momSheet");
-  let closeTimer = null, cmtTarget = null, newImg = "";
+  const body = $m("#momBody"), feed = $m("#momFeed"), hero = $m("#momHero"), cover = $m("#momCover"), head = $m(".mom-head");
+  const bar = $m("#momBar"), cmtInp = $m("#momCmt"), sheet = $m("#momSheet");
+  let closeTimer = null, cmtTarget = null, newImg = "", menuFor = null;
+  // 封面：她自己换的（ew_mom_cover），没换过用主页大卡片那张
+  const COVER_KEY = "ew_mom_cover";
+  function paintCover(){
+    let u = ""; try{ u = localStorage.getItem(COVER_KEY) || ""; }catch(_){}
+    cover.style.backgroundImage = u ? `url("${u}")` : "";
+  }
   const esc = (s) => escapeHtml(String(s == null ? "" : s));
   const pad = (n) => String(n).padStart(2, "0");
   function ago(ts){
@@ -9316,7 +9345,8 @@ var Moments = (function(){
   }
   function paint(){
     const V = EwMoments.visible, posts = EwMoments.shown();
-    body.innerHTML = `<div class="mom-cover"><div class="mom-me"><b>${esc(meName())}</b>${av("me", "mom-me-av")}</div></div>` +
+    menuFor = null;
+    feed.innerHTML = `<div class="mom-me"><b>${esc(meName())}</b>${av("me", "mom-me-av")}</div>` +
       (posts.length ? posts.map(p => {
         const likes = p.likes.filter(V), cms = p.comments.filter(V).sort((a, b) => a.ts - b.ts), liked = likes.some(l => l.from === "me");
         return `<div class="mom-post" data-id="${esc(p.id)}">
@@ -9326,15 +9356,17 @@ var Moments = (function(){
             ${p.text ? `<div class="mom-text">${esc(p.text)}</div>` : ""}
             ${p.img ? `<img class="mom-img" src="${esc(p.img)}" alt="">` : ""}
             <div class="mom-foot"><span>${ago(p.ts)}</span><button type="button" class="mom-del" data-del="${esc(p.id)}">删除</button>
-              <span class="mom-acts"><button type="button" class="mom-act${liked ? " on" : ""}" data-like="${esc(p.id)}">${liked ? "♥" : "♡"} 赞</button><button type="button" class="mom-act" data-cmt="${esc(p.id)}">评论</button></span></div>
+              <span class="mom-more-wrap"><span class="mom-menu" role="group"><button type="button" data-like="${esc(p.id)}">${liked ? "取消" : "♡ 赞"}</button><i></i><button type="button" data-cmt="${esc(p.id)}">评论</button></span>
+              <button type="button" class="mom-more" data-more="${esc(p.id)}" aria-label="赞或评论"><i></i><i></i></button></span></div>
             ${likes.length || cms.length ? `<div class="mom-box">
-              ${likes.length ? `<div class="mom-likes">♡ ${likes.map(l => esc(nameOf(l.from))).join("，")}</div>` : ""}
-              ${cms.map(c => `<div class="mom-cm" data-cm="${esc(c.id)}" data-from="${c.from}"><b>${esc(nameOf(c.from))}</b>${c.to ? ` 回复 <b>${esc(nameOf(c.to))}</b>` : ""}：${esc(c.text)}</div>`).join("")}
+              ${likes.length ? `<div class="mom-likes">♡ ${likes.map(l => `<b>${esc(nameOf(l.from))}</b>`).join("，")}</div>` : ""}
+              ${cms.map(c => `<div class="mom-cm" data-cm="${esc(c.id)}" data-from="${c.from}"><b>${esc(nameOf(c.from))}</b>${c.to ? `回复<b>${esc(nameOf(c.to))}</b>` : ""}：${esc(c.text)}</div>`).join("")}
             </div>` : ""}
           </div>
         </div>`;
       }).join("") : `<div class="cl-empty">还没有朋友圈<br>右上角发一条吧</div>`);
   }
+  function closeMenu(){ if (menuFor){ const w = feed.querySelector(".mom-more-wrap.open"); if (w) w.classList.remove("open"); menuFor = null; } }
   function openCmt(id){
     cmtTarget = id; bar.classList.remove("hidden");
     cmtInp.value = ""; setTimeout(() => cmtInp.focus(), 30);
@@ -9344,10 +9376,17 @@ var Moments = (function(){
     const t = cmtInp.value.trim(); if (!t || !cmtTarget) return;
     EwMoments.comment(cmtTarget, t); closeCmt(); paint();
   }
-  body.addEventListener("click", (e) => {
+  feed.addEventListener("click", (e) => {
     const t = e.target;
+    const more = t.closest("[data-more]");
+    if (more){
+      const w = more.parentElement, was = w.classList.contains("open");
+      closeMenu(); if (!was){ w.classList.add("open"); menuFor = more.dataset.more; }
+      return;
+    }
     const lk = t.closest("[data-like]"); if (lk){ EwMoments.toggleLike(lk.dataset.like); paint(); return; }
-    const cm = t.closest("[data-cmt]"); if (cm){ openCmt(cm.dataset.cmt); return; }
+    const cm = t.closest("[data-cmt]"); if (cm){ closeMenu(); openCmt(cm.dataset.cmt); return; }
+    if (menuFor){ closeMenu(); return; }
     const del = t.closest("[data-del]"); if (del){ if (confirm("删掉这条朋友圈？")){ EwMoments.remove(del.dataset.del); paint(); } return; }
     const one = t.closest("[data-cm]");
     if (one){
@@ -9393,11 +9432,54 @@ var Moments = (function(){
   });
   $m("#momNew").addEventListener("click", () => { $m("#momText").value = ""; newImg = ""; paintPick(); sheet.classList.remove("hidden"); setTimeout(() => $m("#momText").focus(), 60); });
 
+  // 点封面换图（微信那样）
+  cover.addEventListener("click", () => {
+    if (pullMoved) return;
+    if (!confirm("换一张朋友圈封面？")) return;
+    const inp = document.createElement("input"); inp.type = "file"; inp.accept = "image/*";
+    inp.onchange = async () => {
+      const f = inp.files && inp.files[0]; if (!f) return;
+      try{ const u = await shrink(f); try{ localStorage.setItem(COVER_KEY, u); }catch(_){ showToast("这张太大了，存不下"); return; } paintCover(); }
+      catch(_){ showToast("这张图打不开"); }
+    };
+    inp.click();
+  });
+
+  // 顶栏：封面还看得见时透明（白图标浮在图上），翻过封面变实心、出标题
+  function syncHead(){ head.classList.toggle("solid", body.scrollTop > hero.offsetHeight - head.offsetHeight - 8); }
+  body.addEventListener("scroll", () => { syncHead(); closeMenu(); }, { passive:true });
+
+  // 在最顶上往下拉：封面跟着手指放大（越拉越费劲，橡皮筋那种），松手弹回去
+  let startY = null, pull = 0, pulling = false, pullMoved = false;
+  const rubber = (x) => { const d = window.innerHeight * 0.55; return (1 - 1 / (x * 0.55 / d + 1)) * d; };
+  function setPull(p, anim){
+    pull = p;
+    const h = hero.offsetHeight || 1;
+    [cover, feed].forEach(el => el.style.transition = anim ? "transform .5s cubic-bezier(.2,.9,.25,1)" : "none");
+    cover.style.transform = p ? `scale(${(h + p) / h})` : "";
+    feed.style.transform = p ? `translateY(${p}px)` : "";
+  }
+  body.addEventListener("touchstart", (e) => {
+    pullMoved = false;
+    startY = body.scrollTop <= 0 && e.touches.length === 1 ? e.touches[0].clientY : null;
+  }, { passive:true });
+  body.addEventListener("touchmove", (e) => {
+    if (startY == null) return;
+    const dy = e.touches[0].clientY - startY;
+    if (dy <= 0 || body.scrollTop > 0){ if (pulling){ pulling = false; setPull(0, false); } if (dy < 0) startY = null; return; }
+    e.preventDefault();
+    pulling = pullMoved = true;
+    setPull(rubber(dy), false);
+  }, { passive:false });
+  const release = () => { startY = null; if (pulling){ pulling = false; setPull(0, true); } };
+  body.addEventListener("touchend", release);
+  body.addEventListener("touchcancel", release);
+
   function open(){
     clearTimeout(closeTimer);
     EwMoments.catchUp();
     panel.classList.remove("hidden");
-    paint(); body.scrollTop = 0;
+    paintCover(); paint(); body.scrollTop = 0; setPull(0, false); syncHead();
     EwMoments.markSeen(); refreshMomDot();
     requestAnimationFrame(() => requestAnimationFrame(() => panel.classList.add("open")));
   }
