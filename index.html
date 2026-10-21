@@ -1540,7 +1540,16 @@
   .lb-round{ flex:none; width:44px; height:44px; border-radius:50%; border:1px solid #e3e3e3; background:#fff; color:#191919; display:grid; place-items:center; padding:0; }
   .lb-round svg{ width:20px; height:20px; }
   .lb-title{ flex:1; font-size:21px; font-weight:700; letter-spacing:.02em; }
-  .lb-body{ padding:14px 16px calc(24px + env(safe-area-inset-bottom)); }
+  .lb-body{ padding:4px 16px calc(24px + env(safe-area-inset-bottom)); }
+  .lb-tabs{ display:flex; gap:8px; padding:12px 16px 10px; overflow-x:auto; scrollbar-width:none; }
+  .lb-tabs::-webkit-scrollbar{ display:none; }
+  .lb-tabs button{ flex:none; padding:9px 13px; border-radius:14px; border:1px solid #e3e3e3; background:#fff; color:#555; font:inherit; font-size:15px; font-weight:600; }
+  .lb-tabs button.on{ background:#111; color:#fff; border-color:#111; }
+  .lb-stats{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .lb-stat{ padding:14px 16px; border:1px solid #e8e8e8; border-radius:18px; display:flex; flex-direction:column; gap:6px; }
+  .lb-stat span{ font-size:12.5px; color:#9a9a9a; }
+  .lb-stat b{ font-size:20px; font-weight:600; color:#191919; }
+  .lb-first{ margin:16px 4px 0; font-size:13.5px; color:#9a9a9a; line-height:1.7; }
   .lb-item{ display:flex; align-items:center; gap:13px; width:100%; margin-bottom:12px; padding:15px 16px; border:1px solid #e8e8e8; border-radius:20px; background:#fff;
     text-align:left; color:#191919; font:inherit; box-shadow:0 2px 10px -6px rgba(0,0,0,.12); }
   .lb-item:active{ background:#fafafa; }
@@ -9230,20 +9239,41 @@ var LetterBox = (function(){
   panel.innerHTML = `<div class="lb-head">
       <button type="button" class="lb-round" id="lbBack" aria-label="返回"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
       <div class="lb-title">信箱</div>
-      <button type="button" class="lb-round" id="lbWrite" aria-label="写一封"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></button>
+    </div>
+    <div class="lb-tabs" id="lbTabs" role="tablist">
+      <button type="button" data-tab="in" class="on">收到的信</button><button type="button" data-tab="out">寄出的信</button><button type="button" data-tab="write">写封信</button><button type="button" data-tab="stats">信件数据</button>
     </div>
     <div class="cv-body lb-body" id="lbBody"></div>`;
   document.body.appendChild(panel);
-  const body = panel.querySelector("#lbBody");
-  let closeTimer = null;
+  const body = panel.querySelector("#lbBody"), tabs = panel.querySelector("#lbTabs");
+  let closeTimer = null, tab = "in";   // 10-22 她又发了截图要这排分类：收到的 / 寄出的 / 写封信（直接打开信纸）/ 信件数据
   const pad = (n) => String(n).padStart(2, "0");
   const when = (ts) => { const d = new Date(ts); return `${d.getMonth() + 1}月${d.getDate()}日 ${d.getHours()}:${pad(d.getMinutes())}`; };
   // 信封：没拆的封着口，拆过的口是开的
   const ENV_SHUT = '<svg viewBox="0 0 40 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="3" y="5" width="34" height="23" rx="2.5"/><path d="M3.8 6.5 20 18.5 36.2 6.5"/></svg>';
   const ENV_OPEN = '<svg viewBox="0 0 40 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M3 14 20 3l17 11v14.5a2.5 2.5 0 0 1-2.5 2.5h-29A2.5 2.5 0 0 1 3 28.5z"/><path d="M3.8 14.8 20 24.5l16.2-9.7"/><path d="M10 11.5V8h20v3.5" opacity=".55"/></svg>';
+  const dur = (ms) => { const h = ms / 3600e3; return h < 1 ? `${Math.max(1, Math.round(ms / 60e3))} 分钟` : (h < 48 ? `${h.toFixed(h < 10 ? 1 : 0)} 小时` : `${Math.round(h / 24)} 天`); };
+  function paintStats(){
+    const all = EwLetters.shown(), ta = all.filter(x => x.from === "ta"), me = all.filter(x => x.from === "me");
+    if (!all.length){ body.innerHTML = ""; return; }
+    // TA 平均隔多久回：每封她寄出的，到它后面第一封 TA 的信（主动写的不算回信）
+    const sorted = all.slice().sort((a, b) => a.ts - b.ts), gaps = [];
+    sorted.forEach((x, i) => { if (x.from !== "me") return; const r = sorted.slice(i + 1).find(y => y.from === "ta" && !y.auto); if (r) gaps.push(r.ts - x.ts); });
+    const chars = (l) => l.reduce((n, x) => n + x.body.replace(/\s/g, "").length, 0);
+    const first = sorted[0], d = new Date(first.ts);
+    const cell = (k, v) => `<div class="lb-stat"><span>${k}</span><b>${v}</b></div>`;
+    body.innerHTML = `<div class="lb-stats">
+      ${cell("收到的信", ta.length + " 封")}${cell("寄出的信", me.length + " 封")}
+      ${cell("还没拆", ta.filter(x => !x.read).length + " 封")}${cell(escapeHtml(taName()) + " 平均隔多久回", gaps.length ? dur(gaps.reduce((a, b) => a + b, 0) / gaps.length) : "—")}
+      ${cell("你写的字", chars(me) + " 字")}${cell(escapeHtml(taName()) + " 写的字", chars(ta) + " 字")}
+    </div>
+    <div class="lb-first">第一封信在 ${d.getFullYear()} 年 ${d.getMonth() + 1} 月 ${d.getDate()} 日，${first.from === "ta" ? "是 " + escapeHtml(taName()) + " 写给你的" : "是你写的"}</div>`;
+  }
   function paint(){
-    const items = EwLetters.shown();
-    body.innerHTML = (EwLetters.pending() ? `<div class="lb-wait">${escapeHtml(taName())} 在写回信…</div>` : "") +
+    tabs.querySelectorAll("[data-tab]").forEach(b => b.classList.toggle("on", b.dataset.tab === tab));
+    if (tab === "stats"){ paintStats(); return; }
+    const items = EwLetters.shown().filter(it => tab === "in" ? it.from === "ta" : it.from === "me");
+    body.innerHTML = (tab === "in" && EwLetters.pending() ? `<div class="lb-wait">${escapeHtml(taName())} 在写回信…</div>` : "") +
       items.map(it => {
         const first = (it.body.split("\n").find(l => l.trim()) || "").trim();
         return `<button type="button" class="lb-item${it.read ? "" : " unread"}" data-id="${escapeHtml(it.id)}">
@@ -9258,9 +9288,14 @@ var LetterBox = (function(){
     const it = EwLetters.shown().find(x => x.id === b.dataset.id);
     if (it){ openLetterPaper(); showLetter(it); paint(); }
   });
-  panel.querySelector("#lbWrite").addEventListener("click", () => { openLetterPaper(); showLetterCompose(); });
+  tabs.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-tab]"); if (!b) return;
+    if (b.dataset.tab === "write"){ openLetterPaper(); showLetterCompose(); return; }   // 写封信：直接打开信纸，分类停在原来那个
+    tab = b.dataset.tab; paint(); body.scrollTop = 0;
+  });
   function open(){
     clearTimeout(closeTimer);
+    tab = "in";
     panel.classList.remove("hidden");
     paint(); body.scrollTop = 0;
     requestAnimationFrame(() => requestAnimationFrame(() => panel.classList.add("open")));
