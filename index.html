@@ -1191,6 +1191,8 @@
   .sticker-grid{ display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; }
   .sticker-grid button{ border:none; background:transparent; padding:0; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px; }
   .sticker-grid img{ width:100%; aspect-ratio:1; object-fit:cover; border-radius:12px; background:rgba(125,128,135,.10); }
+  .sticker-grid .stk-add i{ width:100%; aspect-ratio:1; border-radius:12px; border:1.5px dashed var(--text-faint); display:grid; place-items:center; font-style:normal; font-size:26px; color:var(--text-faint); box-sizing:border-box; }   /* 10-22 导入 */
+  .sticker-grid button{ -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; }
   .sticker-grid span{ font-size:11px; color:var(--text-faint); max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .emoji-empty{ text-align:center; color:var(--text-faint); font-size:13px; padding:30px 0; }
   .att-img-link.att-sticker{ width: min(34vw, 130px); }
@@ -4241,6 +4243,7 @@ var CardLib = (function(){
         <div class="r"><span>一次回几条</span><span class="nums">${num("minN", 1, 10)} ~ ${num("maxN", 1, 10)}</span></div>
         <div class="r"><span>已读不回（%）</span><span class="nums">${num("ignorePct", 0, 100)}</span></div>
         <div class="r"><span>拼句的机会（%）</span><span class="nums">${num("composePct", 0, 100)}</span></div>
+        <div class="r"><span>TA 发表情包（%）</span><span class="nums">${num("stickerPct", 0, 100)}</span></div>
         <div class="r"><span>拼句用几张</span><span class="nums">${num("composeMinN", 2, 10)} ~ ${num("composeMaxN", 2, 10)}</span></div>
         <div class="r cl-joins"><span>中间用的标点</span><span class="cl-chips">${Object.entries(COMPOSE_JOIN_NAMES).map(([k, v]) => `<button type="button" class="cl-on${(c.composeJoins || []).includes(k) ? " on" : ""}" data-join="${k}">${esc(v)}</button>`).join("")}</span></div>
         <div class="r"><span>TA 主动找你</span><button type="button" class="cl-on${c.proactive ? " on" : ""}" id="clPro">${c.proactive ? "开" : "关"}</button></div>
@@ -4735,9 +4738,10 @@ const BACKUP_SKIP = /^companion_(secret|push|deleted_ids)|cache|history/i;   // 
     const letters = EwLetters.all();   // 信也只在手机上
     await EwMoments.ready;
     const moments = EwMoments.all();   // 朋友圈也是
+    const stickers = await EwStickers.load();   // 她导入的表情包（缩小过，不大）
     const d = new Date(), pad = (n) => String(n).padStart(2, "0");
     const name = `Elsewhere-备份-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}.json`;
-    const blob = new Blob([JSON.stringify({ app: "elsewhere", v: 1, at: d.toISOString(), data, presets, msgs, letters, moments })], { type: "application/json" });
+    const blob = new Blob([JSON.stringify({ app: "elsewhere", v: 1, at: d.toISOString(), data, presets, msgs, letters, moments, stickers })], { type: "application/json" });
     const f = new File([blob], name, { type: "application/json" });
     try{
       // iPhone 上弹出分享面板，选「存储到文件」就存进手机了
@@ -4769,6 +4773,7 @@ const BACKUP_SKIP = /^companion_(secret|push|deleted_ids)|cache|history/i;   // 
     if (Array.isArray(obj.msgs)){ try{ await Mock.replaceAll(obj.msgs); }catch(_){} }
     if (Array.isArray(obj.letters)){ try{ await EwLetters.replaceAll(obj.letters); }catch(_){} }
     if (Array.isArray(obj.moments)){ try{ await EwMoments.replaceAll(obj.moments); }catch(_){} }
+    if (Array.isArray(obj.stickers)){ try{ await EwStore.set("stickers", obj.stickers); }catch(_){} }
     if (Array.isArray(obj.presets)){
       for (let i = 0; i < PRESET_N; i++){
         const p = obj.presets[i];
@@ -6687,6 +6692,7 @@ const REPLY_DEFAULT = {
   momReplyPct: 60,              // 她评论了，TA 回她的机会（%）
   momReactMinMin: 1, momReactMaxMin: 120,  // TA 过多久来（分钟）
   musTaPickPct: 30,             // 一起听：一首放完，TA 来选下一首的机会（%）
+  stickerPct: 15,               // TA 回话时发一张表情包的机会（%，从她导入的里挑）
   letterMinN: 2, letterMaxN: 4  // 一封回信几段
 };
 function replyCfg(){
@@ -6737,6 +6743,16 @@ const Mock = (() => {
       const n = Math.max(1, Math.round(rand(c.minN, c.maxN)));
       let i = 0;
       const one = () => {
+        // 10-22：偶尔丢一张她导入的表情包（照 Sean 那个站，默认 15%）
+        const stk = Math.random() * 100 < c.stickerPct ? EwStickers.pick() : null;
+        if (stk){
+          emitEvent({ type:"typing", active:true });
+          setTimeout(() => {
+            emit(push("ai", "", { attachments: [{ url: stk.url, name: stk.file, mime: stk.mime, kind: "image", sticker: stk.name }] }));
+            if (++i < n) setTimeout(one, rand(600, 1800)); else emitEvent({ type:"typing", active:false });
+          }, 900);
+          return;
+        }
         const text = EwCards.pickReply();
         if (!text){ if (i === 0) emitEvent({ type:"typing", active:false }); return; }
         emitEvent({ type:"typing", active:true });
@@ -10404,11 +10420,47 @@ const EMOJIS = ("😊 🥰 😘 😚 🤗 🥺 😭 😢 😳 😴 🤔 😶 �
   "👍 👌 🙏 👏 🫶 🤝 ✌️ 🫡 🐶 🐱 🐰 🐻 🐼 🐧 🍰 🧋").split(" ");
 const emojiBtn = $("#emojiBtn"), emojiPanel = $("#emojiPanel"), emojiBody = $("#emojiBody");
 let emojiTab = "emoji", stickerCache = null;
+/* 表情包（Elsewhere 10-22，她要自己导入）：存在这台手机的 IndexedDB（kv "stickers" = [{id,name,url,mime}]），
+   url 是缩小过的 data: 图（gif 原样留着才会动），发出去的消息里直接带着这张图，以后翻记录也看得到。TA 回话时也会偶尔丢一张 */
+const EwStickers = (() => {
+  let list = null;
+  async function load(){ if (!list){ try{ list = (await EwStore.get("stickers")) || []; }catch(_){ list = []; } } return list; }
+  const save = () => EwStore.set("stickers", list);
+  function toData(file){
+    return new Promise((res, rej) => {
+      if (/gif$/i.test(file.type)){
+        if (file.size > 2 * 1024 * 1024){ rej(new Error("big")); return; }
+        const fr = new FileReader(); fr.onload = () => res({ url: fr.result, mime: "image/gif" }); fr.onerror = rej; fr.readAsDataURL(file); return;
+      }
+      const u = URL.createObjectURL(file), img = new Image();
+      img.onload = () => {
+        let w = img.naturalWidth, h = img.naturalHeight; const r = Math.min(1, 360 / Math.max(w, h));
+        w = Math.round(w * r); h = Math.round(h * r);
+        const c = document.createElement("canvas"); c.width = w; c.height = h; c.getContext("2d").drawImage(img, 0, 0, w, h);
+        URL.revokeObjectURL(u);
+        const png = /png|webp/i.test(file.type);   // 可能带透明的留 png
+        res({ url: c.toDataURL(png ? "image/png" : "image/jpeg", .88), mime: png ? "image/png" : "image/jpeg" });
+      };
+      img.onerror = () => { URL.revokeObjectURL(u); rej(new Error("img")); };
+      img.src = u;
+    });
+  }
+  return {
+    load,
+    async add(file, name){
+      await load();
+      const d = await toData(file);
+      const s = { id: EwCards.uid(), name: (name || "表情包").slice(0, 30), file: "", url: d.url, mime: d.mime };
+      s.file = s.id; list.push(s); await save(); return s;
+    },
+    async remove(id){ await load(); list = list.filter(s => s.id !== id); await save(); },
+    pick(){ return list && list.length ? list[Math.floor(Math.random() * list.length)] : null; },
+  };
+})();
+EwStickers.load();
 async function loadStickers(){
   if (stickerCache) return stickerCache;
-  const r = await fetch(`${API_BASE}/app/stickers`, { headers: authHeaders() });
-  if (!r.ok) throw new Error("stickers " + r.status);
-  stickerCache = (await r.json()).items || [];
+  stickerCache = (await EwStickers.load()).slice();
   return stickerCache;
 }
 async function paintEmojiPanel(){
@@ -10421,9 +10473,8 @@ async function paintEmojiPanel(){
   try{
     const items = await loadStickers();
     if (emojiTab !== "sticker") return;
-    emojiBody.innerHTML = items.length
-      ? `<div class="sticker-grid">${items.map((s, i) => `<button type="button" data-sticker="${i}"><img src="${escapeHtml(s.url)}" alt="${escapeHtml(s.name)}" loading="lazy"><span>${escapeHtml(s.name)}</span></button>`).join("")}</div>`
-      : `<div class="emoji-empty">表情包还是空的</div>`;
+    emojiBody.innerHTML = `<div class="sticker-grid"><button type="button" class="stk-add" data-stk-add aria-label="导入表情包"><i>＋</i><span>导入</span></button>` +
+      items.map((s, i) => `<button type="button" data-sticker="${i}"><img src="${escapeHtml(s.url)}" alt="${escapeHtml(s.name)}" loading="lazy"><span>${escapeHtml(s.name)}</span></button>`).join("") + `</div>`;
   }catch(_){
     emojiBody.innerHTML = `<div class="emoji-empty">表情包没打开，等一下再试试</div>`;
   }
@@ -10441,8 +10492,7 @@ function insertEmoji(e){
   inputEl.dispatchEvent(new Event("input"));
 }
 async function sendSticker(s){
-  if (!secret) return;
-  ensureAudio();
+  ensureAudio();   // Elsewhere 不登录（原来 LINK 这里没钥匙就不发，所以以前发不出去）
   const att = { url: s.url, name: s.file, mime: s.mime, kind: "image", sticker: s.name };
   const optimisticTs = Date.now();
   const tempKey = "pending-" + (++optimisticSeq);
@@ -10466,13 +10516,48 @@ async function sendSticker(s){
     setMessage({ ...optimistic, status: "failed" });
   }
 }
+// 导入：一张就问名字，几张一起用文件名；长按一张 = 删掉（跟 LINK 一样）
+function importStickers(){
+  const inp = document.createElement("input");
+  inp.type = "file"; inp.accept = "image/*"; inp.multiple = true;
+  inp.onchange = async () => {
+    const files = inp.files ? [...inp.files] : []; if (!files.length) return;
+    let ok = 0, bad = 0;
+    for (const f of files){
+      let name = (f.name || "").replace(/\.[^.]+$/, "");
+      if (files.length === 1){
+        const v = prompt("给它起个名字", /^(IMG|image|photo)[_-]?\d*/i.test(name) ? "" : name);
+        if (v === null) return;
+        name = v.trim() || name;
+      }
+      try{ await EwStickers.add(f, name); ok++; }catch(_){ bad++; }
+    }
+    stickerCache = null; paintEmojiPanel();
+    showToast(bad ? `导进去 ${ok} 张，${bad} 张没成功（gif 要小于 2MB）` : `导进去 ${ok} 张`);
+  };
+  inp.click();
+}
+let stkPressT = 0, stkLongDone = false;
+async function removeSticker(s){
+  if (!confirm(`删掉表情包「${s.name}」？`)) return;
+  await EwStickers.remove(s.id); stickerCache = null; paintEmojiPanel(); showToast("删掉了");
+}
 if (emojiBtn && emojiPanel){
   emojiBtn.addEventListener("click", (e) => { e.preventDefault(); setEmojiPanel(emojiPanel.hidden); });
+  emojiPanel.addEventListener("pointerdown", (e) => {
+    const st = e.target.closest("[data-sticker]"); stkLongDone = false; clearTimeout(stkPressT);
+    if (!st || !stickerCache) return;
+    stkPressT = setTimeout(() => { stkLongDone = true; const s = stickerCache[+st.dataset.sticker]; if (s) removeSticker(s); }, 600);
+  });
+  ["pointerup", "pointercancel", "pointerleave"].forEach(ev => emojiPanel.addEventListener(ev, () => clearTimeout(stkPressT)));
+  emojiPanel.addEventListener("contextmenu", (e) => { if (e.target.closest("[data-sticker]")) e.preventDefault(); });
   emojiPanel.addEventListener("click", (e) => {
+    if (stkLongDone){ stkLongDone = false; return; }
     const tab = e.target.closest("[data-tab]");
     if (tab){ emojiTab = tab.dataset.tab; paintEmojiPanel(); return; }
     const em = e.target.closest("[data-emoji]");
     if (em){ insertEmoji(em.dataset.emoji); return; }
+    if (e.target.closest("[data-stk-add]")){ importStickers(); return; }
     const st = e.target.closest("[data-sticker]");
     if (st && stickerCache){ const s = stickerCache[+st.dataset.sticker]; if (s){ setEmojiPanel(false); sendSticker(s); } }
   });
