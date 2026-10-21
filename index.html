@@ -1540,7 +1540,8 @@
   .cl-set input[type=number]{ width:58px; padding:5px 6px; border:1px solid var(--hairline); border-radius:8px; background:rgba(255,255,255,.55); color:var(--text); font:inherit; font-size:14px; text-align:center; }
   .cl-cat .cv-av{ font-size:15px; }
   #clNewUse{ flex:1 1 100%; grid-auto-flow:row; grid-template-columns:repeat(2, 1fr); }
-  .cl-slot{ flex:1 1 100%; }
+  .cl-set .r.cl-joins{ flex-wrap:wrap; }
+  .cl-chips{ display:flex; flex-wrap:wrap; gap:6px; justify-content:flex-end; }
   .cl-on{ flex:none; padding:4px 10px; border-radius:999px; border:1px solid var(--hairline); background:transparent; color:var(--text-soft); font:inherit; font-size:12.5px; }
   .cl-on.on{ background:var(--text); color:var(--bg); border-color:transparent; }
   .cl-new{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding:12px 16px; }
@@ -4107,8 +4108,7 @@ var CardLib = (function(){
     <div class="cv-body" id="clBody"></div>`;
   document.body.appendChild(panel);
   const body = panel.querySelector("#clBody"), title = panel.querySelector("#clTitle");
-  let catId = null, newUse = "reply", newSlot = 2, closeTimer = null;
-  const slotSeg = (id, cur) => `<div class="segmented cl-slot" id="${id}" role="group">${Object.entries(EwCards.SLOTS).map(([k, v]) => `<button type="button" data-slot="${k}" class="${+k === +cur ? "active" : ""}">${v}</button>`).join("")}</div>`;
+  let catId = null, newUse = "reply", closeTimer = null;
   const esc = (s) => escapeHtml(String(s == null ? "" : s));
 
   function paintHome(){
@@ -4127,7 +4127,6 @@ var CardLib = (function(){
       <div class="cl-new">
         <input id="clNewName" type="text" maxlength="20" placeholder="新分类的名字">
         <div class="segmented" id="clNewUse" role="group">${Object.entries(EwCards.USES).map(([k, v]) => `<button type="button" data-use="${k}" class="${k === newUse ? "active" : ""}">${v}</button>`).join("")}</div>
-        ${newUse === "part" ? slotSeg("clNewSlot", newSlot) : ""}
         <button type="button" class="cl-btn" id="clNewBtn">加分类</button>
       </div>
       <div class="cl-sec">回复设置</div>
@@ -4136,6 +4135,8 @@ var CardLib = (function(){
         <div class="r"><span>一次回几条</span><span class="nums">${num("minN", 1, 10)} ~ ${num("maxN", 1, 10)}</span></div>
         <div class="r"><span>已读不回（%）</span><span class="nums">${num("ignorePct", 0, 100)}</span></div>
         <div class="r"><span>拼句的机会（%）</span><span class="nums">${num("composePct", 0, 100)}</span></div>
+        <div class="r"><span>拼句用几张</span><span class="nums">${num("composeMinN", 2, 10)} ~ ${num("composeMaxN", 2, 10)}</span></div>
+        <div class="r cl-joins"><span>中间用的标点</span><span class="cl-chips">${Object.entries(COMPOSE_JOIN_NAMES).map(([k, v]) => `<button type="button" class="cl-on${(c.composeJoins || []).includes(k) ? " on" : ""}" data-join="${k}">${esc(v)}</button>`).join("")}</span></div>
         <div class="r"><span>TA 主动找你</span><button type="button" class="cl-on${c.proactive ? " on" : ""}" id="clPro">${c.proactive ? "开" : "关"}</button></div>
         <div class="r"><span>隔多久找一次（分钟）</span><span class="nums">${num("proMinMin", 5, 10000)} ~ ${num("proMaxMin", 5, 10000)}</span></div>
       </div>
@@ -4155,7 +4156,6 @@ var CardLib = (function(){
     catId = id; title.textContent = cat.name;
     const cards = EwCards.cardsOf(id);
     body.innerHTML = `
-      ${cat.use === "part" ? `<div class="cl-sec">拼在句子的</div><div class="cl-new">${slotSeg("clCatSlot", cat.slot || 2)}</div>` : ""}
       <div class="cl-add">
         <textarea id="clText" placeholder="一行一张"></textarea>
         <button type="button" class="cl-btn" id="clAddBtn">加进去</button>
@@ -4179,15 +4179,16 @@ var CardLib = (function(){
       const name = body.querySelector("#clNewName").value;   // 重画会清掉输入框，先记着
       paintHome(); body.querySelector("#clNewName").value = name; return;
     }
-    const slot = t.closest("[data-slot]");
-    if (slot){
-      if (catId) EwCards.setSlot(catId, slot.dataset.slot); else newSlot = +slot.dataset.slot;
-      slot.parentElement.querySelectorAll("button").forEach(b => b.classList.toggle("active", b === slot)); return;
+    const jn = t.closest("[data-join]");
+    if (jn){
+      const c = replyCfg(), k = jn.dataset.join, on = new Set(c.composeJoins || []);
+      if (on.has(k)){ if (on.size === 1){ showToast("至少留一个"); return; } on.delete(k); } else on.add(k);
+      c.composeJoins = Object.keys(COMPOSE_JOINS).filter(x => on.has(x)); saveReplyCfg(c); paintHome(); return;
     }
     if (t.closest("#clNewBtn")){
       const inp = body.querySelector("#clNewName"), name = inp.value.trim();
       if (!name){ inp.focus(); return; }
-      const c = EwCards.addCat(name, newUse, newSlot); paintCat(c.id); return;
+      const c = EwCards.addCat(name, newUse); paintCat(c.id); return;
     }
     if (t.closest("#clPro")){ const c = replyCfg(); c.proactive = !c.proactive; saveReplyCfg(c); paintHome(); return; }
     if (t.closest("#clExport")){ exportCards(); return; }
@@ -4229,7 +4230,7 @@ var CardLib = (function(){
     v = Math.max(Number(inp.min), Math.min(Number(inp.max), v));
     c[k] = v;
     // 最快不能比最慢还慢
-    [["minSec","maxSec"],["minN","maxN"],["proMinMin","proMaxMin"],["letterMinH","letterMaxH"],["letterMinN","letterMaxN"]].forEach(([a, b]) => { if (c[a] > c[b]){ if (k === a) c[b] = c[a]; else c[a] = c[b]; } });
+    [["minSec","maxSec"],["minN","maxN"],["proMinMin","proMaxMin"],["letterMinH","letterMaxH"],["letterMinN","letterMaxN"],["composeMinN","composeMaxN"]].forEach(([a, b]) => { if (c[a] > c[b]){ if (k === a) c[b] = c[a]; else c[a] = c[b]; } });
     saveReplyCfg(c); paintHome();
   });
 
@@ -6416,7 +6417,8 @@ if (statusCopy) statusCopy.addEventListener("click", async () => {
 /* ════════════ 本地引擎（Elsewhere，10-21）════════════
    没有服务器：消息存在这台手机的 IndexedDB，TA 的话全从字卡库里抽。
    字卡库：localStorage ew_cards = { cats:[{id,name,use,on}], cards:[{id,cat,text}] }
-     use = reply（聊天回复）/ proactive（TA 主动找你）/ letter（回信的段落）/ part（拼句的一截，slot 1 开头 2 中间 3 结尾）
+     use = reply（聊天回复）/ proactive（TA 主动找你）/ letter（回信的段落）
+     拼句（10-22 照 mochi / Sean / 传讯改）：不分开头中间结尾，从聊天回复字卡里抽几张不重复的，用随机标点连成一条
      ——以后的功能（今日情话、朋友圈）再加新的 use
    回复设置：localStorage ew_reply（见 REPLY_DEFAULT）
    信：IndexedDB "letters"（见 EwLetters） */
@@ -6445,19 +6447,15 @@ const EwStore = (() => {
 
 const EwCards = (() => {
   const KEY = "ew_cards";
-  const USES = { reply:"聊天回复", proactive:"TA 主动找你", letter:"回信", part:"拼句" };
-  const SLOTS = { 1:"开头", 2:"中间", 3:"结尾" };
-  const useLabel = (c) => c.use === "part" ? `拼句 · ${SLOTS[c.slot] || "中间"}` : (USES[c.use] || "");
+  const USES = { reply:"聊天回复", proactive:"TA 主动找你", letter:"回信" };
+  const useLabel = (c) => USES[c.use] || "";
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-  // v2（10-21）：多了回信和拼句，旧字卡库补上这几个空分类（只补一次，删了不会再冒出来）
+  // v2（10-21）：多了回信，旧字卡库补上这个空分类（只补一次，删了不会再冒出来）
   const V2_CATS = [
-    { id:"letter", name:"回信",      use:"letter", on:true },
-    { id:"p_head", name:"拼句·开头", use:"part", slot:1, on:true },
-    { id:"p_mid",  name:"拼句·中间", use:"part", slot:2, on:true },
-    { id:"p_tail", name:"拼句·结尾", use:"part", slot:3, on:true },
+    { id:"letter", name:"回信", use:"letter", on:true },
   ];
   function defaults(){
-    return { v:2, cats:[
+    return { v:3, cats:[
       { id:"daily",  name:"日常",       use:"reply",     on:true },
       { id:"sweet",  name:"情话",       use:"reply",     on:true },
       { id:"comfort",name:"安慰",       use:"reply",     on:true },
@@ -6469,9 +6467,23 @@ const EwCards = (() => {
   try{ data = JSON.parse(localStorage.getItem(KEY) || "null"); }catch(_){ data = null; }
   if (!data || !Array.isArray(data.cats)) data = defaults();
   if (!Array.isArray(data.cards)) data.cards = [];
-  if (!(data.v >= 2)){
-    V2_CATS.forEach(c => { if (!data.cats.some(x => x.id === c.id)) data.cats.push({ ...c }); });
-    data.v = 2; save();
+  migrate();
+  // 旧版本的字卡库升级（打开时、导入旧备份时都跑一遍）
+  function migrate(){
+    if (!(data.v >= 2)){
+      V2_CATS.forEach(c => { if (!data.cats.some(x => x.id === c.id)) data.cats.push({ ...c }); });
+      data.v = 2; save();
+    }
+    // v3（10-22）：拼句不再分开头/中间/结尾。空着的那三个分类删掉；她往里加过字卡的，改成聊天回复留着
+    if (!(data.v >= 3)){
+      data.cats = data.cats.filter(c => {
+        if (c.use !== "part") return true;
+        const n = data.cards.filter(k => k.cat === c.id).length;
+        if (!n && ["p_head","p_mid","p_tail"].includes(c.id)) return false;
+        c.use = "reply"; delete c.slot; return true;
+      });
+      data.v = 3; save();
+    }
   }
   function save(){ try{ localStorage.setItem(KEY, JSON.stringify(data)); }catch(_){ showToast("存不下了，手机空间不够"); } }
   function poolOf(test){
@@ -6480,35 +6492,43 @@ const EwCards = (() => {
   }
   const one = (pool) => pool.length ? pool[Math.floor(Math.random() * pool.length)].text : null;
   function pick(use){ return one(poolOf(c => c.use === use)); }
-  // 拼句：开头 + 中间 + 结尾 各抽一张连成一句；至少两截有字卡才拼，不然返回 null
+  // 拼句：聊天回复字卡里抽 composeMinN~composeMaxN 张不重复的，每两张之间放一个随机标点（composeJoins 里开着的）；不到两张就返回 null
   function compose(){
-    const parts = [1, 2, 3].map(s => one(poolOf(c => c.use === "part" && (+c.slot || 2) === s))).filter(Boolean);
-    return parts.length >= 2 ? parts.join("") : null;
+    const cfg = replyCfg();
+    const texts = [...new Set(poolOf(c => c.use === "reply").map(c => c.text))];
+    if (texts.length < 2) return null;
+    const lo = Math.max(2, cfg.composeMinN), hi = Math.max(lo, cfg.composeMaxN);
+    const want = Math.min(texts.length, lo + Math.floor(Math.random() * (hi - lo + 1)));
+    const segs = [];
+    while (segs.length < want){ const t = texts[Math.floor(Math.random() * texts.length)]; if (!segs.includes(t)) segs.push(t); }
+    const joins = (cfg.composeJoins || []).map(k => COMPOSE_JOINS[k]).filter(s => s != null);
+    if (!joins.length) joins.push(" ");
+    return segs.reduce((s, t) => s + joins[Math.floor(Math.random() * joins.length)] + t);
   }
   return {
-    USES, SLOTS, useLabel, uid,
+    USES, useLabel, uid,
     all: () => data,
     cats: () => data.cats,
     cardsOf: (cat) => data.cards.filter(c => c.cat === cat),
     count: (cat) => data.cards.filter(c => c.cat === cat).length,
-    addCat(name, use, slot){
+    addCat(name, use){
       const c = { id: uid(), name, use: USES[use] ? use : "reply", on:true };
-      if (c.use === "part") c.slot = SLOTS[slot] ? +slot : 2;
       data.cats.push(c); save(); return c;
     },
     renameCat(id, name){ const c = data.cats.find(x => x.id === id); if (c){ c.name = name; save(); } },
-    setSlot(id, slot){ const c = data.cats.find(x => x.id === id); if (c && SLOTS[slot]){ c.slot = +slot; save(); } },
     toggleCat(id){ const c = data.cats.find(x => x.id === id); if (c){ c.on = !c.on; save(); } },
     removeCat(id){ data.cats = data.cats.filter(c => c.id !== id); data.cards = data.cards.filter(c => c.cat !== id); save(); },
     addCards(cat, texts){ texts.forEach(t => data.cards.push({ id: uid(), cat, text: t })); save(); },
     editCard(id, text){ const c = data.cards.find(x => x.id === id); if (c){ c.text = text; save(); } },
     removeCard(id){ data.cards = data.cards.filter(c => c.id !== id); save(); },
-    replaceAll(d){ if (d && Array.isArray(d.cats) && Array.isArray(d.cards)){ data = d; save(); return true; } return false; },
+    replaceAll(d){ if (d && Array.isArray(d.cats) && Array.isArray(d.cards)){ data = d; save(); migrate(); return true; } return false; },
     pick, compose,
     pickReply(){ const c = replyCfg(); return (Math.random() * 100 < c.composePct && compose()) || pick("reply") || compose(); },
   };
 })();
 
+const COMPOSE_JOINS = { space:" ", dou:"，", per:"。", ex:"！", q:"？", el:"……", dash:"——", nl:"\n" };
+const COMPOSE_JOIN_NAMES = { space:"空格", dou:"，", per:"。", ex:"！", q:"？", el:"……", dash:"——", nl:"换行" };
 const REPLY_KEY = "ew_reply";
 const REPLY_DEFAULT = {
   minSec: 2, maxSec: 20,        // 你说完多久回（秒）
@@ -6517,6 +6537,8 @@ const REPLY_DEFAULT = {
   proactive: true,              // TA 主动找你
   proMinMin: 60, proMaxMin: 240,// 隔多久主动找一次（分钟）
   composePct: 30,               // 回话时拼句的概率（%）
+  composeMinN: 2, composeMaxN: 3,                       // 拼句用几张字卡
+  composeJoins: ["space","dou","per","ex","q","el","dash"],   // 连接用的标点（跟 mochi 默认一样，换行默认关）
   letterMinH: 1, letterMaxH: 6, // 回信要等多久（小时）
   letterMinN: 2, letterMaxN: 4  // 一封回信几段
 };
