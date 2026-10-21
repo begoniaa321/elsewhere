@@ -4144,6 +4144,7 @@ var CardLib = (function(){
       <div class="glass cl-set">
         <div class="r"><span>回信要等（小时）</span><span class="nums">${num("letterMinH", 0, 168)} ~ ${num("letterMaxH", 0, 168)}</span></div>
         <div class="r"><span>一封回信几段</span><span class="nums">${num("letterMinN", 1, 20)} ~ ${num("letterMaxN", 1, 20)}</span></div>
+        <div class="r"><span>TA 主动写信，隔几小时一封<br><small>填 0 就不写</small></span><span class="nums">${num("letterEveryH", 0, 720)}</span></div>
       </div>
       <div class="cl-foot">
         <button type="button" class="cl-btn" id="clExport">导出字卡</button>
@@ -4229,6 +4230,7 @@ var CardLib = (function(){
     if (!Number.isFinite(v)) v = REPLY_DEFAULT[k];
     v = Math.max(Number(inp.min), Math.min(Number(inp.max), v));
     c[k] = v;
+    if (k === "letterEveryH") EwLetters.resetAuto();   // 改了间隔就从现在开始算，不会一下子补出好几封
     // 最快不能比最慢还慢
     [["minSec","maxSec"],["minN","maxN"],["proMinMin","proMaxMin"],["letterMinH","letterMaxH"],["letterMinN","letterMaxN"],["composeMinN","composeMaxN"]].forEach(([a, b]) => { if (c[a] > c[b]){ if (k === a) c[b] = c[a]; else c[a] = c[b]; } });
     saveReplyCfg(c); paintHome();
@@ -6540,6 +6542,7 @@ const REPLY_DEFAULT = {
   composeMinN: 2, composeMaxN: 3,                       // 拼句用几张字卡
   composeJoins: ["space","dou","per","ex","q","el","dash"],   // 连接用的标点（跟 mochi 默认一样，换行默认关）
   letterMinH: 1, letterMaxH: 6, // 回信要等多久（小时）
+  letterEveryH: 0,              // TA 隔几小时主动写一封（0 = 不写，她自己填）
   letterMinN: 2, letterMaxN: 4  // 一封回信几段
 };
 function replyCfg(){
@@ -6687,9 +6690,8 @@ const EwLetters = (() => {
   const save = () => EwStore.set("letters", list);
   const now = () => Date.now();
   const rand = (a, b) => a + Math.random() * (b - a);
-  function write(body){
-    const t = now();
-    list.push({ id: EwCards.uid(), from:"me", ts:t, body, read:true });
+  // 从「回信」字卡抽 letterMinN~letterMaxN 段拼成一封；字卡是空的就返回 ""
+  function makeBody(){
     const c = replyCfg();
     const n = Math.max(1, Math.round(rand(c.letterMinN, Math.max(c.letterMinN, c.letterMaxN))));
     const paras = [];
@@ -6697,16 +6699,39 @@ const EwLetters = (() => {
       const p = EwCards.pick("letter"); if (!p) break;
       if (!paras.includes(p) || i >= n * 2) paras.push(p);
     }
-    let replied = false;
-    if (paras.length){
-      list.push({ id: EwCards.uid(), from:"ta", ts: t + rand(c.letterMinH, Math.max(c.letterMinH, c.letterMaxH)) * 3600e3, body: paras.join("\n\n"), read:false });
-      replied = true;
-    }
-    save();
-    return replied;
+    return paras.join("\n\n");
   }
+  function write(body){
+    const t = now();
+    list.push({ id: EwCards.uid(), from:"me", ts:t, body, read:true });
+    const c = replyCfg(), reply = makeBody();
+    if (reply) list.push({ id: EwCards.uid(), from:"ta", ts: t + rand(c.letterMinH, Math.max(c.letterMinH, c.letterMaxH)) * 3600e3, body: reply, read:false });
+    save();
+    return !!reply;
+  }
+  // 10-22 她要的：TA 每隔 letterEveryH 小时主动写一封（她自己填，0 = 不写）。上一封的时间存 ew_letter_auto_last；
+  // 手机关着时错过的下次打开补上（时间写成当时），一次最多补 3 封
+  const AUTO_KEY = "ew_letter_auto_last";
+  function catchUpAuto(){
+    const every = Number(replyCfg().letterEveryH) || 0;
+    if (every <= 0) return;
+    let last = Number(localStorage.getItem(AUTO_KEY) || 0);
+    if (!last){ last = now(); try{ localStorage.setItem(AUTO_KEY, String(last)); }catch(_){} return; }
+    const gap = every * 3600e3, due = Math.floor((now() - last) / gap);
+    if (due < 1) return;
+    let made = 0;
+    for (let i = Math.max(1, due - 2); i <= due; i++){   // 错过太多次就只补最近 3 封
+      const body = makeBody(); if (!body) break;
+      list.push({ id: EwCards.uid(), from:"ta", ts: last + i * gap, body, read:false, auto:1 }); made++;
+    }
+    try{ localStorage.setItem(AUTO_KEY, String(last + due * gap)); }catch(_){}
+    if (made) save();
+  }
+  ready.then(catchUpAuto);
   return {
     ready,
+    catchUpAuto,
+    resetAuto(){ try{ localStorage.setItem(AUTO_KEY, String(now())); }catch(_){} },   // 改了间隔就从现在开始算
     // 到了时间的，新的在前
     shown: () => list.filter(x => x.ts <= now()).sort((a, b) => b.ts - a.ts),
     pending: () => list.some(x => x.ts > now()),
@@ -9055,10 +9080,11 @@ function closeLetters(){ const w = $("#letterWrap"); w.classList.remove("open");
   window.addEventListener("keydown", (e) => { if (e.key === "Escape") closeLetters(); });
   EwLetters.ready.then(refreshLetterDot);
   setInterval(() => {   // 回信到时间了：小红点亮；信箱开着就顺手刷新
+    EwLetters.catchUpAuto();
     refreshLetterDot();
     if (wrap.classList.contains("open") && letterView === "list") showLetterList();
   }, 60e3);
-  document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshLetterDot(); });
+  document.addEventListener("visibilitychange", () => { if (!document.hidden){ EwLetters.catchUpAuto(); refreshLetterDot(); } });
 })();
 
 /* ════════════ 长按气泡 · 复制菜单 (TG 式:遮罩 + 抬起 + 动作条) ════════════ */
