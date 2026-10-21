@@ -1532,6 +1532,43 @@
   /* Elsewhere 不要的：语音、终端、API 窗口（10-21 她说删） */
   #micBtn, #terminalBtn, #sessionBtn, #sessionPop{ display:none !important; }
   #cardPanel{ z-index:270; }   /* 从 Home(190) 点进来，盖住 Home 和底部导航(260) */
+  /* 朋友圈（10-22）：跟字卡库一样从 Home 点进来；顶上一张封面（主页大卡片那张图）+ 她的名字头像，下面一条条像微信 */
+  #momPanel{ z-index:270; }
+  #momPanel .cv-title{ flex:1; }
+  .mom-cover{ position:relative; height:220px; margin-bottom:34px; background:var(--hc-cover, var(--menu-wall-default)) center/cover no-repeat; }
+  .mom-me{ position:absolute; right:16px; bottom:-26px; display:flex; align-items:flex-end; gap:12px; }
+  .mom-me b{ margin-bottom:32px; color:#fff; font-size:17px; font-weight:600; text-shadow:0 1px 4px rgba(0,0,0,.45); }
+  .mom-me-av, .mom-av{ flex:none; display:grid; place-items:center; border-radius:10px; background:rgba(230,236,243,.95) center/cover no-repeat; color:var(--text-soft); }
+  .mom-me-av{ width:64px; height:64px; font-size:24px; box-shadow:0 0 0 2px rgba(255,255,255,.9); }
+  .mom-post{ display:flex; gap:11px; padding:14px 16px; border-bottom:1px solid var(--hairline); }
+  .mom-av{ width:42px; height:42px; font-size:17px; }
+  .mom-main{ flex:1; min-width:0; }
+  .mom-name{ font-size:15px; font-weight:600; color:var(--accent, var(--text)); }
+  .mom-text{ margin-top:4px; font-size:15.5px; line-height:1.6; color:var(--text); white-space:pre-wrap; word-break:break-word; }
+  .mom-img{ display:block; margin-top:8px; max-width:68%; max-height:260px; border-radius:6px; object-fit:cover; }
+  .mom-foot{ display:flex; align-items:center; gap:12px; margin-top:8px; font-size:12.5px; color:var(--text-faint); }
+  .mom-del{ border:0; background:none; padding:0; color:var(--text-faint); font:inherit; font-size:12.5px; }
+  .mom-acts{ margin-left:auto; display:flex; gap:6px; }
+  .mom-act{ padding:3px 10px; border-radius:999px; border:1px solid var(--hairline); background:rgba(255,255,255,.5); color:var(--text-soft); font:inherit; font-size:12.5px; }
+  .mom-act.on{ color:#e5534b; }
+  .mom-box{ margin-top:8px; padding:6px 10px; border-radius:6px; background:rgba(140,160,176,.12); font-size:14px; line-height:1.65; color:var(--text); }
+  .mom-likes{ color:var(--text-soft); padding-bottom:3px; }
+  .mom-likes + .mom-cm{ border-top:1px solid var(--hairline); padding-top:4px; }
+  .mom-cm{ word-break:break-word; }
+  .mom-cm b{ font-weight:600; color:var(--text-soft); }
+  .mom-bar{ display:flex; gap:8px; padding:8px 12px calc(8px + env(safe-area-inset-bottom)); border-top:1px solid var(--hairline); background:rgba(248,250,252,.92); }
+  .mom-bar.hidden{ display:none; }
+  .mom-bar{ margin-bottom:var(--keyboard-offset, 0px); }   /* 键盘弹起来时跟聊天输入框一样往上让 */
+  .mom-bar input{ flex:1; min-width:0; padding:9px 12px; border:1px solid var(--hairline); border-radius:10px; background:#fff; color:var(--text); font:inherit; font-size:16px; }
+  .mom-sheet{ position:absolute; inset:0; z-index:5; display:flex; align-items:flex-start; justify-content:center; padding:calc(env(safe-area-inset-top) + 70px) 16px 16px; background:rgba(20,24,30,.28); }
+  .mom-sheet.hidden{ display:none; }
+  .mom-sheet-card{ width:100%; max-width:440px; padding:14px; border-radius:18px; display:flex; flex-direction:column; gap:10px; background:rgba(255,255,255,.88); }
+  .mom-sheet-card textarea{ min-height:110px; resize:none; padding:10px 12px; border:1px solid var(--hairline); border-radius:12px; background:#fff; color:var(--text); font:inherit; font-size:16px; line-height:1.6; }
+  .mom-add, .mom-thumb{ position:relative; width:76px; height:76px; border-radius:10px; border:1px dashed var(--hairline); background:rgba(140,160,176,.1) center/cover no-repeat; color:var(--text-faint); font-size:28px; display:grid; place-items:center; }
+  .mom-thumb{ border-style:solid; }
+  .mom-thumb button{ position:absolute; top:-8px; right:-8px; width:22px; height:22px; border-radius:50%; border:0; background:rgba(0,0,0,.6); color:#fff; font-size:14px; line-height:1; }
+  .mom-sheet-btns{ display:flex; justify-content:flex-end; gap:8px; }
+  .mom-go{ background:var(--text); color:var(--bg); border-color:transparent; }
   .cl-sec{ padding:14px 16px 4px; font-size:12.5px; letter-spacing:.06em; color:var(--text-faint); }
   .cl-set{ margin:0 16px; padding:4px 14px; border-radius:16px; }
   .cl-set .r{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 0; border-bottom:1px solid var(--hairline); font-size:14.5px; color:var(--text); }
@@ -3489,7 +3526,7 @@
       <!-- 第二页：Elsewhere 的小功能（10-21 她挑的，一样样做） -->
       <section class="home-pg home-pg2">
         <div class="home-grid bottom" data-space="grid2">
-          <button class="glass home-tile wide" type="button" data-menu="moments" data-tune="t-moments" data-glass><b>Moments</b><span>朋友圈</span></button>
+          <button class="glass home-tile wide" type="button" data-menu="moments" data-tune="t-moments" data-glass><b>Moments</b><span>朋友圈</span><i class="dot hidden" id="momDot"></i></button>
           <button class="glass home-tile" type="button" data-menu="tarot" data-tune="t-tarot" data-glass><b>Tarot</b><span>塔罗 · 雷诺曼 · 运势</span></button>
           <button class="glass home-tile" type="button" data-menu="doodle" data-tune="t-doodle" data-glass><b>Doodle</b><span>涂鸦本</span></button>
           <button class="glass home-tile" type="button" data-menu="stats" data-tune="t-stats" data-glass><b>Stats</b><span>统计 · 词云 · 收藏</span></button>
@@ -4070,6 +4107,7 @@ function openMenu(){
   menuIsOpen = true; paintTabbar();
   refreshDays();
   if (typeof refreshLetterDot === "function") refreshLetterDot();
+  if (typeof refreshMomDot === "function") refreshMomDot();
   if (typeof loadHome === "function") loadHome();
   clearTimeout(menuCloseTimer);
   menuPanel.classList.remove("hidden");
@@ -4092,6 +4130,7 @@ if (menuPanel){
     if (item.dataset.menu === "chat"){ closeMenu(); openConv(LEGACY_SESSION_ID); }   // 只有一个 TA，直接进聊天
     else if (item.dataset.menu === "cards") CardLib.open();                  // 字卡库
     else if (item.dataset.menu === "letter") openLetters();                  // 写信 · 收信
+    else if (item.dataset.menu === "moments") Moments.open();                // 朋友圈
     else showToast("还在做哦，马上就来");
   });
 }
@@ -4145,6 +4184,15 @@ var CardLib = (function(){
         <div class="r"><span>回信要等（小时）</span><span class="nums">${num("letterMinH", 0, 168)} ~ ${num("letterMaxH", 0, 168)}</span></div>
         <div class="r"><span>一封回信几段</span><span class="nums">${num("letterMinN", 1, 20)} ~ ${num("letterMaxN", 1, 20)}</span></div>
         <div class="r"><span>TA 主动写信，隔几小时一封<br><small>填 0 就不写</small></span><span class="nums">${num("letterEveryH", 0, 720)}</span></div>
+      </div>
+      <div class="cl-sec">朋友圈设置</div>
+      <div class="glass cl-set">
+        <div class="r"><span>TA 一天发几条</span><span class="nums">${num("momDayMin", 0, 20)} ~ ${num("momDayMax", 0, 20)}</span></div>
+        <div class="r"><span>一条用几张字卡</span><span class="nums">${num("momCardMin", 1, 10)} ~ ${num("momCardMax", 1, 10)}</span></div>
+        <div class="r"><span>你发的，TA 点赞（%）</span><span class="nums">${num("momLikePct", 0, 100)}</span></div>
+        <div class="r"><span>你发的，TA 评论（%）</span><span class="nums">${num("momCommentPct", 0, 100)}</span></div>
+        <div class="r"><span>你评论了，TA 回你（%）</span><span class="nums">${num("momReplyPct", 0, 100)}</span></div>
+        <div class="r"><span>TA 过多久来（分钟）</span><span class="nums">${num("momReactMinMin", 0, 1440)} ~ ${num("momReactMaxMin", 0, 1440)}</span></div>
       </div>
       <div class="cl-foot">
         <button type="button" class="cl-btn" id="clExport">导出字卡</button>
@@ -4232,7 +4280,7 @@ var CardLib = (function(){
     c[k] = v;
     if (k === "letterEveryH") EwLetters.resetAuto();   // 改了间隔就从现在开始算，不会一下子补出好几封
     // 最快不能比最慢还慢
-    [["minSec","maxSec"],["minN","maxN"],["proMinMin","proMaxMin"],["letterMinH","letterMaxH"],["letterMinN","letterMaxN"],["composeMinN","composeMaxN"]].forEach(([a, b]) => { if (c[a] > c[b]){ if (k === a) c[b] = c[a]; else c[a] = c[b]; } });
+    [["minSec","maxSec"],["minN","maxN"],["proMinMin","proMaxMin"],["letterMinH","letterMaxH"],["letterMinN","letterMaxN"],["composeMinN","composeMaxN"],["momDayMin","momDayMax"],["momCardMin","momCardMax"],["momReactMinMin","momReactMaxMin"]].forEach(([a, b]) => { if (c[a] > c[b]){ if (k === a) c[b] = c[a]; else c[a] = c[b]; } });
     saveReplyCfg(c); paintHome();
   });
 
@@ -4614,9 +4662,11 @@ const BACKUP_SKIP = /^companion_(secret|push|deleted_ids)|cache|history/i;   // 
     const msgs = Mock.all();   // 聊天记录（Elsewhere 只存在手机上，必须带上）
     await EwLetters.ready;
     const letters = EwLetters.all();   // 信也只在手机上
+    await EwMoments.ready;
+    const moments = EwMoments.all();   // 朋友圈也是
     const d = new Date(), pad = (n) => String(n).padStart(2, "0");
     const name = `Elsewhere-备份-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}.json`;
-    const blob = new Blob([JSON.stringify({ app: "elsewhere", v: 1, at: d.toISOString(), data, presets, msgs, letters })], { type: "application/json" });
+    const blob = new Blob([JSON.stringify({ app: "elsewhere", v: 1, at: d.toISOString(), data, presets, msgs, letters, moments })], { type: "application/json" });
     const f = new File([blob], name, { type: "application/json" });
     try{
       // iPhone 上弹出分享面板，选「存储到文件」就存进手机了
@@ -4647,6 +4697,7 @@ const BACKUP_SKIP = /^companion_(secret|push|deleted_ids)|cache|history/i;   // 
     }catch(_){ say("手机存储空间不够，只导入了一部分"); }
     if (Array.isArray(obj.msgs)){ try{ await Mock.replaceAll(obj.msgs); }catch(_){} }
     if (Array.isArray(obj.letters)){ try{ await EwLetters.replaceAll(obj.letters); }catch(_){} }
+    if (Array.isArray(obj.moments)){ try{ await EwMoments.replaceAll(obj.moments); }catch(_){} }
     if (Array.isArray(obj.presets)){
       for (let i = 0; i < PRESET_N; i++){
         const p = obj.presets[i];
@@ -6449,7 +6500,7 @@ const EwStore = (() => {
 
 const EwCards = (() => {
   const KEY = "ew_cards";
-  const USES = { reply:"聊天回复", proactive:"TA 主动找你", letter:"回信" };
+  const USES = { reply:"聊天回复", proactive:"TA 主动找你", letter:"回信", moment:"朋友圈" };
   const useLabel = (c) => USES[c.use] || "";
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   // v2（10-21）：多了回信，旧字卡库补上这个空分类（只补一次，删了不会再冒出来）
@@ -6457,7 +6508,8 @@ const EwCards = (() => {
     { id:"letter", name:"回信", use:"letter", on:true },
   ];
   function defaults(){
-    return { v:3, cats:[
+    return { v:4, cats:[
+      { id:"moment", name:"朋友圈", use:"moment", on:true },
       { id:"daily",  name:"日常",       use:"reply",     on:true },
       { id:"sweet",  name:"情话",       use:"reply",     on:true },
       { id:"comfort",name:"安慰",       use:"reply",     on:true },
@@ -6485,6 +6537,11 @@ const EwCards = (() => {
         c.use = "reply"; delete c.slot; return true;
       });
       data.v = 3; save();
+    }
+    // v4（10-22）：有了朋友圈，补一个空的「朋友圈」分类（TA 发朋友圈从这里抽，空着就用聊天回复的）
+    if (!(data.v >= 4)){
+      if (!data.cats.some(c => c.use === "moment")) data.cats.push({ id:"moment", name:"朋友圈", use:"moment", on:true });
+      data.v = 4; save();
     }
   }
   function save(){ try{ localStorage.setItem(KEY, JSON.stringify(data)); }catch(_){ showToast("存不下了，手机空间不够"); } }
@@ -6543,6 +6600,11 @@ const REPLY_DEFAULT = {
   composeJoins: ["space","dou","per","ex","q","el","dash"],   // 连接用的标点（跟 mochi 默认一样，换行默认关）
   letterMinH: 1, letterMaxH: 6, // 回信要等多久（小时）
   letterEveryH: 0,              // TA 隔几小时主动写一封（0 = 不写，她自己填）
+  momDayMin: 0, momDayMax: 2,   // TA 一天发几条朋友圈
+  momCardMin: 1, momCardMax: 2, // 一条用几张字卡
+  momLikePct: 80, momCommentPct: 50,   // 她发的，TA 点赞 / 评论的机会（%）
+  momReplyPct: 60,              // 她评论了，TA 回她的机会（%）
+  momReactMinMin: 1, momReactMaxMin: 120,  // TA 过多久来（分钟）
   letterMinN: 2, letterMaxN: 4  // 一封回信几段
 };
 function replyCfg(){
@@ -9086,6 +9148,246 @@ function closeLetters(){ const w = $("#letterWrap"); w.classList.remove("open");
   }, 60e3);
   document.addEventListener("visibilitychange", () => { if (!document.hidden){ EwLetters.catchUpAuto(); refreshLetterDot(); } });
 })();
+
+/* ════════════ Moments 朋友圈（Elsewhere 10-22，全在这台手机上） ════════════
+   照 Sean 那个站的做法：TA 每天随机发几条（字卡拼的），她发的 TA 过一阵来点赞/评论；她评论了 TA 可能回。
+   跟写信一样「先算好、到点才显示」：点赞/评论/回复一生成就带上将来的 ts，没到时间不画——所以手机关着也照样会来。
+   帖子 IndexedDB "moments"：[{id, from:"ta"|"me", ts, text, img, likes:[{from,ts}], comments:[{id,from,ts,text,to}]}]
+   TA 今天哪几个时间点发：localStorage ew_mom_plan = {day, times:[ts]}；她看到哪了：ew_mom_seen */
+const EwMoments = (() => {
+  let list = [];
+  const ready = (async () => { try{ const s = await EwStore.get("moments"); if (Array.isArray(s)) list = s; }catch(_){} })();
+  const save = () => EwStore.set("moments", list);
+  const now = () => Date.now();
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const randInt = (a, b) => Math.floor(rand(a, Math.max(a, b) + 1));
+  const later = (ts) => { const c = replyCfg(); return ts + rand(c.momReactMinMin, Math.max(c.momReactMinMin, c.momReactMaxMin)) * 60e3; };
+  const dayKey = (t) => { const d = new Date(t); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
+  // TA 发的那条：朋友圈字卡里抽几张，用拼句的标点连；朋友圈字卡是空的就用聊天回复的
+  function taText(){
+    const c = replyCfg(), use = EwCards.pick("moment") ? "moment" : "reply";
+    const n = randInt(c.momCardMin, c.momCardMax), segs = [];
+    for (let i = 0; i < n * 3 && segs.length < n; i++){ const t = EwCards.pick(use); if (!t) break; if (!segs.includes(t)) segs.push(t); }
+    if (!segs.length) return "";
+    const joins = (c.composeJoins || []).map(k => COMPOSE_JOINS[k]).filter(s => s != null && s !== "\n");
+    if (!joins.length) joins.push(" ");
+    return segs.reduce((s, t) => s + joins[Math.floor(Math.random() * joins.length)] + t);
+  }
+  // 她发了 / 她评论了：TA 的反应现在就定好，ts 放到以后
+  function planReact(p){
+    const c = replyCfg();
+    if (Math.random() * 100 < c.momLikePct) p.likes.push({ from:"ta", ts: later(p.ts) });
+    if (Math.random() * 100 < c.momCommentPct){ const t = EwCards.pickReply(); if (t) p.comments.push({ id: EwCards.uid(), from:"ta", ts: later(p.ts), text: t }); }
+  }
+  function planReplyTo(p, cm){
+    const c = replyCfg();
+    if (Math.random() * 100 >= c.momReplyPct) return;
+    const t = EwCards.pickReply(); if (!t) return;
+    p.comments.push({ id: EwCards.uid(), from:"ta", ts: later(cm.ts), text: t, to:"me" });
+  }
+  // 每天 9~23 点里随机挑 momDayMin~momDayMax 个时间点；到点的发出去（时间写成那个点）
+  function catchUp(){
+    const c = replyCfg(), t = now();
+    let plan = null; try{ plan = JSON.parse(localStorage.getItem("ew_mom_plan") || "null"); }catch(_){}
+    let made = 0;
+    const flush = (times) => times.filter(ts => {
+      if (ts > t) return true;
+      const text = taText();
+      if (text){ list.push({ id: EwCards.uid(), from:"ta", ts, text, likes:[], comments:[] }); made++; }
+      return false;
+    });
+    if (plan && plan.day !== dayKey(t)) plan.times = flush(plan.times || []);   // 前一天没来得及发的补上
+    if (!plan || plan.day !== dayKey(t)){
+      const d = new Date(t), base = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 9).getTime();
+      const times = Array.from({ length: randInt(c.momDayMin, c.momDayMax) }, () => base + Math.random() * 14 * 3600e3).sort((a, b) => a - b);
+      plan = { day: dayKey(t), times };
+    }
+    plan.times = flush(plan.times);
+    try{ localStorage.setItem("ew_mom_plan", JSON.stringify(plan)); }catch(_){}
+    if (made) save();
+    return made;
+  }
+  const visible = (x) => x.ts <= now();
+  function seen(){ return Number(localStorage.getItem("ew_mom_seen") || 0); }
+  return {
+    ready, catchUp,
+    shown: () => list.filter(visible).sort((a, b) => b.ts - a.ts),
+    visible,
+    unread(){   // TA 新发的，或者 TA 新的赞/评论
+      const s = seen(), t = now(), fresh = (x) => x.from === "ta" && x.ts > s && x.ts <= t;
+      return list.some(p => fresh(p) || p.likes.some(fresh) || p.comments.some(fresh));
+    },
+    markSeen(){ try{ localStorage.setItem("ew_mom_seen", String(now())); }catch(_){} },
+    post(text, img){
+      const p = { id: EwCards.uid(), from:"me", ts: now(), text, img: img || "", likes:[], comments:[] };
+      planReact(p); list.push(p); save(); return p;
+    },
+    comment(id, text){
+      const p = list.find(x => x.id === id); if (!p) return;
+      const cm = { id: EwCards.uid(), from:"me", ts: now(), text };
+      p.comments.push(cm); planReplyTo(p, cm); save();
+    },
+    toggleLike(id){
+      const p = list.find(x => x.id === id); if (!p) return;
+      const i = p.likes.findIndex(l => l.from === "me");
+      if (i >= 0) p.likes.splice(i, 1); else p.likes.push({ from:"me", ts: now() });
+      save();
+    },
+    removeComment(id, cid){ const p = list.find(x => x.id === id); if (p){ p.comments = p.comments.filter(c => c.id !== cid); save(); } },
+    remove(id){ list = list.filter(x => x.id !== id); save(); },
+    all: () => list,
+    replaceAll(l){ list = Array.isArray(l) ? l : []; return save(); },
+  };
+})();
+
+var Moments = (function(){
+  const panel = document.createElement("div");
+  panel.className = "conv-panel hidden";
+  panel.id = "momPanel";
+  panel.innerHTML = `<div class="cv-head">
+      <button type="button" class="sp-back" id="momBack" aria-label="返回"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <div class="cv-title">朋友圈</div>
+      <button type="button" class="sp-back mom-new" id="momNew" aria-label="发朋友圈"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.8l1.4-2h4.6l1.4 2h1.8A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.5" r="3.4"/></svg></button>
+    </div>
+    <div class="cv-body" id="momBody"></div>
+    <div class="mom-bar hidden" id="momBar"><input id="momCmt" type="text" maxlength="200" enterkeyhint="send" placeholder="评论"><button type="button" class="cl-btn" id="momCmtGo">发送</button></div>
+    <div class="mom-sheet hidden" id="momSheet">
+      <div class="mom-sheet-card glass">
+        <textarea id="momText" placeholder="这一刻的想法…"></textarea>
+        <div class="mom-pick" id="momPickWrap"><button type="button" class="mom-add" id="momPick" aria-label="加一张图">＋</button></div>
+        <div class="mom-sheet-btns"><button type="button" class="cl-btn" id="momCancel">取消</button><button type="button" class="cl-btn mom-go" id="momGo">发表</button></div>
+      </div>
+    </div>`;
+  document.body.appendChild(panel);
+  const $m = (s) => panel.querySelector(s);
+  const body = $m("#momBody"), bar = $m("#momBar"), cmtInp = $m("#momCmt"), sheet = $m("#momSheet");
+  let closeTimer = null, cmtTarget = null, newImg = "";
+  const esc = (s) => escapeHtml(String(s == null ? "" : s));
+  const pad = (n) => String(n).padStart(2, "0");
+  function ago(ts){
+    const s = (Date.now() - ts) / 1000, d = new Date(ts), y = new Date(); y.setDate(y.getDate() - 1);
+    if (s < 60) return "刚刚";
+    if (s < 3600) return Math.floor(s / 60) + " 分钟前";
+    if (d.toDateString() === new Date().toDateString()) return Math.floor(s / 3600) + " 小时前";
+    if (d.toDateString() === y.toDateString()) return `昨天 ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    return `${d.getMonth() + 1}月${d.getDate()}日`;
+  }
+  const nameOf = (from) => from === "ta" ? taName() : meName();
+  function meAv(){ try{ return localStorage.getItem(ME_AVATAR_KEY) || ""; }catch(_){ return ""; } }
+  function av(from, cls){
+    const u = from === "ta" ? convAvatarUrl(LEGACY_SESSION_ID) : meAv();
+    return u ? `<span class="${cls}" style="background-image:url('${esc(u)}')"></span>` : `<span class="${cls}">${esc(nameOf(from).slice(0, 1))}</span>`;
+  }
+  function paint(){
+    const V = EwMoments.visible, posts = EwMoments.shown();
+    body.innerHTML = `<div class="mom-cover"><div class="mom-me"><b>${esc(meName())}</b>${av("me", "mom-me-av")}</div></div>` +
+      (posts.length ? posts.map(p => {
+        const likes = p.likes.filter(V), cms = p.comments.filter(V).sort((a, b) => a.ts - b.ts), liked = likes.some(l => l.from === "me");
+        return `<div class="mom-post" data-id="${esc(p.id)}">
+          ${av(p.from, "mom-av")}
+          <div class="mom-main">
+            <div class="mom-name">${esc(nameOf(p.from))}</div>
+            ${p.text ? `<div class="mom-text">${esc(p.text)}</div>` : ""}
+            ${p.img ? `<img class="mom-img" src="${esc(p.img)}" alt="">` : ""}
+            <div class="mom-foot"><span>${ago(p.ts)}</span><button type="button" class="mom-del" data-del="${esc(p.id)}">删除</button>
+              <span class="mom-acts"><button type="button" class="mom-act${liked ? " on" : ""}" data-like="${esc(p.id)}">${liked ? "♥" : "♡"} 赞</button><button type="button" class="mom-act" data-cmt="${esc(p.id)}">评论</button></span></div>
+            ${likes.length || cms.length ? `<div class="mom-box">
+              ${likes.length ? `<div class="mom-likes">♡ ${likes.map(l => esc(nameOf(l.from))).join("，")}</div>` : ""}
+              ${cms.map(c => `<div class="mom-cm" data-cm="${esc(c.id)}" data-from="${c.from}"><b>${esc(nameOf(c.from))}</b>${c.to ? ` 回复 <b>${esc(nameOf(c.to))}</b>` : ""}：${esc(c.text)}</div>`).join("")}
+            </div>` : ""}
+          </div>
+        </div>`;
+      }).join("") : `<div class="cl-empty">还没有朋友圈<br>右上角发一条吧</div>`);
+  }
+  function openCmt(id){
+    cmtTarget = id; bar.classList.remove("hidden");
+    cmtInp.value = ""; setTimeout(() => cmtInp.focus(), 30);
+  }
+  function closeCmt(){ cmtTarget = null; bar.classList.add("hidden"); cmtInp.blur(); }
+  function sendCmt(){
+    const t = cmtInp.value.trim(); if (!t || !cmtTarget) return;
+    EwMoments.comment(cmtTarget, t); closeCmt(); paint();
+  }
+  body.addEventListener("click", (e) => {
+    const t = e.target;
+    const lk = t.closest("[data-like]"); if (lk){ EwMoments.toggleLike(lk.dataset.like); paint(); return; }
+    const cm = t.closest("[data-cmt]"); if (cm){ openCmt(cm.dataset.cmt); return; }
+    const del = t.closest("[data-del]"); if (del){ if (confirm("删掉这条朋友圈？")){ EwMoments.remove(del.dataset.del); paint(); } return; }
+    const one = t.closest("[data-cm]");
+    if (one){
+      const pid = one.closest("[data-id]").dataset.id;
+      if (one.dataset.from === "me"){ if (confirm("删掉这条评论？")){ EwMoments.removeComment(pid, one.dataset.cm); paint(); } }
+      else openCmt(pid);   // 点 TA 的评论 = 回 TA
+      return;
+    }
+    if (cmtTarget) closeCmt();
+  });
+  $m("#momCmtGo").addEventListener("click", sendCmt);
+  cmtInp.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.isComposing){ e.preventDefault(); sendCmt(); } });
+  // 发一条：字 + 最多一张图（压到 1280px 以内）
+  function paintPick(){
+    $m("#momPickWrap").innerHTML = newImg ? `<span class="mom-thumb" style="background-image:url('${newImg}')"><button type="button" id="momUnpick" aria-label="去掉这张图">×</button></span>` : `<button type="button" class="mom-add" id="momPick" aria-label="加一张图">＋</button>`;
+  }
+  function shrink(file){
+    return new Promise((res, rej) => {
+      const url = URL.createObjectURL(file), img = new Image();
+      img.onload = () => {
+        let w = img.naturalWidth, h = img.naturalHeight; const r = Math.min(1, 1280 / Math.max(w, h));
+        w = Math.round(w * r); h = Math.round(h * r);
+        const c = document.createElement("canvas"); c.width = w; c.height = h; c.getContext("2d").drawImage(img, 0, 0, w, h);
+        URL.revokeObjectURL(url); res(c.toDataURL("image/jpeg", .82));
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); rej(new Error("img")); };
+      img.src = url;
+    });
+  }
+  sheet.addEventListener("click", (e) => {
+    if (e.target === sheet || e.target.closest("#momCancel")){ sheet.classList.add("hidden"); return; }
+    if (e.target.closest("#momUnpick")){ newImg = ""; paintPick(); return; }
+    if (e.target.closest("#momPick")){
+      const inp = document.createElement("input"); inp.type = "file"; inp.accept = "image/*";
+      inp.onchange = async () => { const f = inp.files && inp.files[0]; if (!f) return; try{ newImg = await shrink(f); paintPick(); }catch(_){ showToast("这张图打不开"); } };
+      inp.click(); return;
+    }
+    if (e.target.closest("#momGo")){
+      const text = $m("#momText").value.trim();
+      if (!text && !newImg){ $m("#momText").focus(); return; }
+      EwMoments.post(text, newImg); sheet.classList.add("hidden"); body.scrollTop = 0; paint();
+    }
+  });
+  $m("#momNew").addEventListener("click", () => { $m("#momText").value = ""; newImg = ""; paintPick(); sheet.classList.remove("hidden"); setTimeout(() => $m("#momText").focus(), 60); });
+
+  function open(){
+    clearTimeout(closeTimer);
+    EwMoments.catchUp();
+    panel.classList.remove("hidden");
+    paint(); body.scrollTop = 0;
+    EwMoments.markSeen(); refreshMomDot();
+    requestAnimationFrame(() => requestAnimationFrame(() => panel.classList.add("open")));
+  }
+  function close(){
+    closeCmt(); sheet.classList.add("hidden");
+    panel.classList.remove("open");
+    clearTimeout(closeTimer);
+    closeTimer = setTimeout(() => panel.classList.add("hidden"), 340);
+  }
+  const isOpen = () => panel.classList.contains("open");
+  $m("#momBack").addEventListener("click", close);
+  // 每分钟看一眼：TA 该发的发出去、到点的赞/评论亮出来
+  function tick(){
+    EwMoments.catchUp();
+    if (isOpen()){ if (!cmtTarget) paint(); EwMoments.markSeen(); }
+    refreshMomDot();
+  }
+  EwMoments.ready.then(tick);
+  setInterval(tick, 60e3);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) tick(); });
+  return { open, close };
+})();
+function refreshMomDot(){
+  const dot = document.getElementById("momDot");
+  if (dot) dot.classList.toggle("hidden", !EwMoments.unread());
+}
 
 /* ════════════ 长按气泡 · 复制菜单 (TG 式:遮罩 + 抬起 + 动作条) ════════════ */
 (function setupMessageMenu(){
