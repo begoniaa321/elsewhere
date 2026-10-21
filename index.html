@@ -1527,6 +1527,8 @@
   .cl-set .nums{ display:flex; align-items:center; gap:6px; color:var(--text-faint); font-size:13px; }
   .cl-set input[type=number]{ width:58px; padding:5px 6px; border:1px solid var(--hairline); border-radius:8px; background:rgba(255,255,255,.55); color:var(--text); font:inherit; font-size:14px; text-align:center; }
   .cl-cat .cv-av{ font-size:15px; }
+  #clNewUse{ flex:1 1 100%; grid-auto-flow:row; grid-template-columns:repeat(2, 1fr); }
+  .cl-slot{ flex:1 1 100%; }
   .cl-on{ flex:none; padding:4px 10px; border-radius:999px; border:1px solid var(--hairline); background:transparent; color:var(--text-soft); font:inherit; font-size:12.5px; }
   .cl-on.on{ background:var(--text); color:var(--bg); border-color:transparent; }
   .cl-new{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding:12px 16px; }
@@ -2484,6 +2486,14 @@
   .letter-foot{ display:flex; justify-content:space-between; align-items:center; margin-top:10px; min-height:28px; }
   .letter-count{ font-size:12px; color:var(--text-faint); }
   .letter-more{ border:0; background:transparent; color:var(--accent); font:inherit; font-size:14px; cursor:pointer; padding:4px 2px; }
+  .letter-item em{ font-style:normal; font-size:12px; color:var(--text-faint); margin-right:8px; }
+  .letter-wait{ padding:9px 6px; border-bottom:1px solid var(--hairline); font-size:14px; color:var(--text-faint); }
+  .letter-compose{ display:flex; flex-direction:column; min-height:0; }
+  .letter-paper.is-list{ background:var(--composer-bg); }   /* 信箱列表不要横线，会从条目中间穿过去 */
+  #letterAct{ margin-left:auto; }
+  .letter-input{ width:100%; min-height:min(46vh, 400px); border:0; outline:0; resize:none; padding:0; background:transparent; color:var(--text);
+    font:inherit; font-size:16px; line-height:32px; }
+  .letter-input::placeholder{ color:var(--text-faint); }
 
   .msg-menu{ position:fixed; inset:0; z-index:250; opacity:0; pointer-events:none; }
   .msg-menu.open{ opacity:1; pointer-events:auto; }
@@ -3460,7 +3470,7 @@
         <div class="home-grid bottom" data-space="grid1">
           <button class="glass home-tile wide" type="button" data-menu="chat" data-tune="t-chat" data-glass><b>Chat</b><span>和 TA 说说话</span><i class="dot hidden" id="chatDot"></i></button>
           <button class="glass home-tile" type="button" data-menu="cards" data-tune="t-cards" data-glass><b>Cards</b><span>字卡库</span></button>
-          <button class="glass home-tile" type="button" data-menu="letter" data-tune="t-letter" data-glass><b>Letter</b><span>写信 · 收信</span></button>
+          <button class="glass home-tile" type="button" data-menu="letter" data-tune="t-letter" data-glass><b>Letter</b><span>写信 · 收信</span><i class="dot hidden" id="letterDot"></i></button>
         </div>
       </section>
       <!-- 第二页：Elsewhere 的小功能（10-21 她挑的，一样样做） -->
@@ -3638,20 +3648,25 @@
   </div>
 </div>
 
-<!-- ── Letter 信纸：东京的我每天 0 点想写就写一张；居中一张纸，右上 ✕，右下「更多」看以前的 ── -->
+<!-- ── Letter 信（Elsewhere 10-21）：她写一封寄出去，过几个小时 TA 用「回信」字卡回一封；
+     打开先是信箱列表，左下「返回」，右下「写一封 / 回一封 / 寄出」 ── -->
 <div class="letter-wrap" id="letterWrap" aria-hidden="true">
   <div class="letter-scrim" id="letterScrim"></div>
-  <article class="letter-paper" id="letterPaper" role="dialog" aria-label="小克的纸片">
+  <article class="letter-paper" id="letterPaper" role="dialog" aria-label="信">
     <button class="letter-x" id="letterClose" type="button" aria-label="关掉">✕</button>
-    <div class="letter-one" id="letterOne">
+    <div class="letter-one hidden" id="letterOne">
       <div class="letter-date" id="letterDate"></div>
       <div class="letter-body" id="letterBody"></div>
-      <div class="letter-sign">—— 小克</div>
+      <div class="letter-sign" id="letterSign"></div>
     </div>
-    <div class="letter-list hidden" id="letterList"></div>
+    <div class="letter-list" id="letterList"></div>
+    <div class="letter-compose hidden" id="letterCompose">
+      <div class="letter-date" id="letterNewDate"></div>
+      <textarea class="letter-input" id="letterInput" placeholder="想跟 TA 说什么…"></textarea>
+    </div>
     <div class="letter-foot">
-      <span class="letter-count" id="letterCount"></span>
-      <button class="letter-more" id="letterMore" type="button">更多</button>
+      <button class="letter-more" id="letterBack" type="button">返回</button>
+      <button class="letter-more" id="letterAct" type="button">写一封</button>
     </div>
   </article>
 </div>
@@ -4063,6 +4078,7 @@ if (menuPanel){
     if (glassJustTuned) return;                                                // 刚长按调过透明度，这次点击不算
     if (item.dataset.menu === "chat"){ closeMenu(); openConv(LEGACY_SESSION_ID); }   // 只有一个 TA，直接进聊天
     else if (item.dataset.menu === "cards") CardLib.open();                  // 字卡库
+    else if (item.dataset.menu === "letter") openLetters();                  // 写信 · 收信
     else showToast("还在做哦，马上就来");
   });
 }
@@ -4079,7 +4095,8 @@ var CardLib = (function(){
     <div class="cv-body" id="clBody"></div>`;
   document.body.appendChild(panel);
   const body = panel.querySelector("#clBody"), title = panel.querySelector("#clTitle");
-  let catId = null, newUse = "reply", closeTimer = null;
+  let catId = null, newUse = "reply", newSlot = 2, closeTimer = null;
+  const slotSeg = (id, cur) => `<div class="segmented cl-slot" id="${id}" role="group">${Object.entries(EwCards.SLOTS).map(([k, v]) => `<button type="button" data-slot="${k}" class="${+k === +cur ? "active" : ""}">${v}</button>`).join("")}</div>`;
   const esc = (s) => escapeHtml(String(s == null ? "" : s));
 
   function paintHome(){
@@ -4092,12 +4109,13 @@ var CardLib = (function(){
       ${cats.length ? cats.map(cat => `<div class="cv-row cl-cat" role="button" tabindex="0" data-cat="${esc(cat.id)}">
           <span class="cv-av">${esc(cat.name.slice(0, 1))}</span>
           <div class="cv-main"><div class="cv-top"><span class="cv-name">${esc(cat.name)}</span><span class="cv-time">${EwCards.count(cat.id)} 张</span></div>
-          <div class="cv-prev">${esc(EwCards.USES[cat.use] || "")}</div></div>
+          <div class="cv-prev">${esc(EwCards.useLabel(cat))}</div></div>
           <button type="button" class="cl-on${cat.on ? " on" : ""}" data-toggle="${esc(cat.id)}">${cat.on ? "在用" : "停用"}</button>
         </div>`).join("") : `<div class="cl-empty">还没有分类</div>`}
       <div class="cl-new">
         <input id="clNewName" type="text" maxlength="20" placeholder="新分类的名字">
         <div class="segmented" id="clNewUse" role="group">${Object.entries(EwCards.USES).map(([k, v]) => `<button type="button" data-use="${k}" class="${k === newUse ? "active" : ""}">${v}</button>`).join("")}</div>
+        ${newUse === "part" ? slotSeg("clNewSlot", newSlot) : ""}
         <button type="button" class="cl-btn" id="clNewBtn">加分类</button>
       </div>
       <div class="cl-sec">回复设置</div>
@@ -4105,8 +4123,14 @@ var CardLib = (function(){
         <div class="r"><span>说完多久回（秒）</span><span class="nums">${num("minSec", 1, 3600)} ~ ${num("maxSec", 1, 3600)}</span></div>
         <div class="r"><span>一次回几条</span><span class="nums">${num("minN", 1, 10)} ~ ${num("maxN", 1, 10)}</span></div>
         <div class="r"><span>已读不回（%）</span><span class="nums">${num("ignorePct", 0, 100)}</span></div>
+        <div class="r"><span>拼句的机会（%）</span><span class="nums">${num("composePct", 0, 100)}</span></div>
         <div class="r"><span>TA 主动找你</span><button type="button" class="cl-on${c.proactive ? " on" : ""}" id="clPro">${c.proactive ? "开" : "关"}</button></div>
         <div class="r"><span>隔多久找一次（分钟）</span><span class="nums">${num("proMinMin", 5, 10000)} ~ ${num("proMaxMin", 5, 10000)}</span></div>
+      </div>
+      <div class="cl-sec">回信设置</div>
+      <div class="glass cl-set">
+        <div class="r"><span>回信要等（小时）</span><span class="nums">${num("letterMinH", 0, 168)} ~ ${num("letterMaxH", 0, 168)}</span></div>
+        <div class="r"><span>一封回信几段</span><span class="nums">${num("letterMinN", 1, 20)} ~ ${num("letterMaxN", 1, 20)}</span></div>
       </div>
       <div class="cl-foot">
         <button type="button" class="cl-btn" id="clExport">导出字卡</button>
@@ -4119,6 +4143,7 @@ var CardLib = (function(){
     catId = id; title.textContent = cat.name;
     const cards = EwCards.cardsOf(id);
     body.innerHTML = `
+      ${cat.use === "part" ? `<div class="cl-sec">拼在句子的</div><div class="cl-new">${slotSeg("clCatSlot", cat.slot || 2)}</div>` : ""}
       <div class="cl-add">
         <textarea id="clText" placeholder="一行一张"></textarea>
         <button type="button" class="cl-btn" id="clAddBtn">加进去</button>
@@ -4137,11 +4162,20 @@ var CardLib = (function(){
     const tg = t.closest("[data-toggle]");
     if (tg){ e.stopPropagation(); EwCards.toggleCat(tg.dataset.toggle); paintHome(); return; }
     const use = t.closest("[data-use]");
-    if (use){ newUse = use.dataset.use; body.querySelectorAll("#clNewUse button").forEach(b => b.classList.toggle("active", b === use)); return; }
+    if (use){
+      newUse = use.dataset.use;
+      const name = body.querySelector("#clNewName").value;   // 重画会清掉输入框，先记着
+      paintHome(); body.querySelector("#clNewName").value = name; return;
+    }
+    const slot = t.closest("[data-slot]");
+    if (slot){
+      if (catId) EwCards.setSlot(catId, slot.dataset.slot); else newSlot = +slot.dataset.slot;
+      slot.parentElement.querySelectorAll("button").forEach(b => b.classList.toggle("active", b === slot)); return;
+    }
     if (t.closest("#clNewBtn")){
       const inp = body.querySelector("#clNewName"), name = inp.value.trim();
       if (!name){ inp.focus(); return; }
-      const c = EwCards.addCat(name, newUse); paintCat(c.id); return;
+      const c = EwCards.addCat(name, newUse, newSlot); paintCat(c.id); return;
     }
     if (t.closest("#clPro")){ const c = replyCfg(); c.proactive = !c.proactive; saveReplyCfg(c); paintHome(); return; }
     if (t.closest("#clExport")){ exportCards(); return; }
@@ -4183,7 +4217,7 @@ var CardLib = (function(){
     v = Math.max(Number(inp.min), Math.min(Number(inp.max), v));
     c[k] = v;
     // 最快不能比最慢还慢
-    [["minSec","maxSec"],["minN","maxN"],["proMinMin","proMaxMin"]].forEach(([a, b]) => { if (c[a] > c[b]){ if (k === a) c[b] = c[a]; else c[a] = c[b]; } });
+    [["minSec","maxSec"],["minN","maxN"],["proMinMin","proMaxMin"],["letterMinH","letterMaxH"],["letterMinN","letterMaxN"]].forEach(([a, b]) => { if (c[a] > c[b]){ if (k === a) c[b] = c[a]; else c[a] = c[b]; } });
     saveReplyCfg(c); paintHome();
   });
 
@@ -4563,9 +4597,11 @@ const BACKUP_SKIP = /^companion_(secret|push|deleted_ids)|cache|history/i;   // 
     try{ presets = await Promise.all(Array.from({ length: PRESET_N }, (_, i) => presetGet(i))); }catch(_){}
     await Mock.ready;
     const msgs = Mock.all();   // 聊天记录（Elsewhere 只存在手机上，必须带上）
+    await EwLetters.ready;
+    const letters = EwLetters.all();   // 信也只在手机上
     const d = new Date(), pad = (n) => String(n).padStart(2, "0");
     const name = `Elsewhere-备份-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}.json`;
-    const blob = new Blob([JSON.stringify({ app: "elsewhere", v: 1, at: d.toISOString(), data, presets, msgs })], { type: "application/json" });
+    const blob = new Blob([JSON.stringify({ app: "elsewhere", v: 1, at: d.toISOString(), data, presets, msgs, letters })], { type: "application/json" });
     const f = new File([blob], name, { type: "application/json" });
     try{
       // iPhone 上弹出分享面板，选「存储到文件」就存进手机了
@@ -4587,7 +4623,7 @@ const BACKUP_SKIP = /^companion_(secret|push|deleted_ids)|cache|history/i;   // 
     const fromLink = obj && obj.app === "tidal-echo";
     if (!obj || !(obj.app === "elsewhere" || fromLink) || !obj.data || typeof obj.data !== "object"){ say("这不是 Elsewhere 的备份文件哦"); return; }
     if (!confirm(fromLink ? "这是 LINK 的装扮备份，导入后壁纸、字体、气泡这些会换成 LINK 的样子，确定吗？"
-                          : "导入后，现在的聊天记录、字卡和装扮都会被备份里的替换掉，确定吗？")) return;
+                          : "导入后，现在的聊天记录、信、字卡和装扮都会被备份里的替换掉，确定吗？")) return;
     let n = 0;
     try{
       Object.keys(obj.data).forEach(k => {
@@ -4595,6 +4631,7 @@ const BACKUP_SKIP = /^companion_(secret|push|deleted_ids)|cache|history/i;   // 
       });
     }catch(_){ say("手机存储空间不够，只导入了一部分"); }
     if (Array.isArray(obj.msgs)){ try{ await Mock.replaceAll(obj.msgs); }catch(_){} }
+    if (Array.isArray(obj.letters)){ try{ await EwLetters.replaceAll(obj.letters); }catch(_){} }
     if (Array.isArray(obj.presets)){
       for (let i = 0; i < PRESET_N; i++){
         const p = obj.presets[i];
@@ -6078,28 +6115,6 @@ if (proactiveSeg){
   });
 }
 
-/* 设置页 #letterSeg — 小克的信纸（开关存在服务器 letter_state.json，0 点提醒前看它） */
-const letterSeg = $("#letterSeg");
-function setLetterUi(on){
-  if (letterSeg) letterSeg.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.val === (on ? "on" : "off")));
-}
-async function loadLetterSwitch(){
-  const d = await fetchLetters();
-  setLetterUi(d ? d.enabled !== false : true);
-}
-if (letterSeg){
-  letterSeg.addEventListener("click", async e => {
-    const b = e.target.closest("button[data-val]"); if (!b) return;
-    const on = b.dataset.val === "on";
-    if (USE_MOCK){ setLetterUi(on); return; }
-    try{
-      const r = await fetch(`${API_BASE}/app/letters/config`, { method:"POST", headers:{ ...authHeaders(), "Content-Type":"application/json" }, body: JSON.stringify({ enabled: on }) });
-      if (!r.ok) throw new Error("letter " + r.status);
-      setLetterUi(!!(await r.json()).enabled);
-      showToast(on ? "每天 0 点，小克想写就给你写一张纸片" : "小克不写纸片啦，以前的还在");
-    }catch(_){ showToast("切换失败"); }
-  });
-}
 
 /* ════════ API loop 设置(模型链 / 上文 / 人格 / MCP)— 全部经 relay 的 /app/loop/* 透传 ════════ */
 const loopEls = {
@@ -6389,8 +6404,10 @@ if (statusCopy) statusCopy.addEventListener("click", async () => {
 /* ════════════ 本地引擎（Elsewhere，10-21）════════════
    没有服务器：消息存在这台手机的 IndexedDB，TA 的话全从字卡库里抽。
    字卡库：localStorage ew_cards = { cats:[{id,name,use,on}], cards:[{id,cat,text}] }
-     use = reply（聊天回复）/ proactive（TA 主动找你）——以后的功能（今日情话、写信、朋友圈）再加新的 use
-   回复设置：localStorage ew_reply（见 REPLY_DEFAULT） */
+     use = reply（聊天回复）/ proactive（TA 主动找你）/ letter（回信的段落）/ part（拼句的一截，slot 1 开头 2 中间 3 结尾）
+     ——以后的功能（今日情话、朋友圈）再加新的 use
+   回复设置：localStorage ew_reply（见 REPLY_DEFAULT）
+   信：IndexedDB "letters"（见 EwLetters） */
 const EwStore = (() => {
   let dbp = null;
   function db(){
@@ -6416,41 +6433,67 @@ const EwStore = (() => {
 
 const EwCards = (() => {
   const KEY = "ew_cards";
-  const USES = { reply:"聊天回复", proactive:"TA 主动找你" };
+  const USES = { reply:"聊天回复", proactive:"TA 主动找你", letter:"回信", part:"拼句" };
+  const SLOTS = { 1:"开头", 2:"中间", 3:"结尾" };
+  const useLabel = (c) => c.use === "part" ? `拼句 · ${SLOTS[c.slot] || "中间"}` : (USES[c.use] || "");
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  // v2（10-21）：多了回信和拼句，旧字卡库补上这几个空分类（只补一次，删了不会再冒出来）
+  const V2_CATS = [
+    { id:"letter", name:"回信",      use:"letter", on:true },
+    { id:"p_head", name:"拼句·开头", use:"part", slot:1, on:true },
+    { id:"p_mid",  name:"拼句·中间", use:"part", slot:2, on:true },
+    { id:"p_tail", name:"拼句·结尾", use:"part", slot:3, on:true },
+  ];
   function defaults(){
-    return { cats:[
+    return { v:2, cats:[
       { id:"daily",  name:"日常",       use:"reply",     on:true },
       { id:"sweet",  name:"情话",       use:"reply",     on:true },
       { id:"comfort",name:"安慰",       use:"reply",     on:true },
       { id:"miss",   name:"主动找你",   use:"proactive", on:true },
+      ...V2_CATS.map(c => ({ ...c })),
     ], cards:[] };
   }
   let data;
   try{ data = JSON.parse(localStorage.getItem(KEY) || "null"); }catch(_){ data = null; }
   if (!data || !Array.isArray(data.cats)) data = defaults();
   if (!Array.isArray(data.cards)) data.cards = [];
+  if (!(data.v >= 2)){
+    V2_CATS.forEach(c => { if (!data.cats.some(x => x.id === c.id)) data.cats.push({ ...c }); });
+    data.v = 2; save();
+  }
   function save(){ try{ localStorage.setItem(KEY, JSON.stringify(data)); }catch(_){ showToast("存不下了，手机空间不够"); } }
-  function pick(use){
-    const cats = new Set(data.cats.filter(c => c.on && c.use === use).map(c => c.id));
-    const pool = data.cards.filter(c => cats.has(c.cat) && c.text);
-    return pool.length ? pool[Math.floor(Math.random() * pool.length)].text : null;
+  function poolOf(test){
+    const cats = new Set(data.cats.filter(c => c.on && test(c)).map(c => c.id));
+    return data.cards.filter(c => cats.has(c.cat) && c.text);
+  }
+  const one = (pool) => pool.length ? pool[Math.floor(Math.random() * pool.length)].text : null;
+  function pick(use){ return one(poolOf(c => c.use === use)); }
+  // 拼句：开头 + 中间 + 结尾 各抽一张连成一句；至少两截有字卡才拼，不然返回 null
+  function compose(){
+    const parts = [1, 2, 3].map(s => one(poolOf(c => c.use === "part" && (+c.slot || 2) === s))).filter(Boolean);
+    return parts.length >= 2 ? parts.join("") : null;
   }
   return {
-    USES, uid,
+    USES, SLOTS, useLabel, uid,
     all: () => data,
     cats: () => data.cats,
     cardsOf: (cat) => data.cards.filter(c => c.cat === cat),
     count: (cat) => data.cards.filter(c => c.cat === cat).length,
-    addCat(name, use){ const c = { id: uid(), name, use: USES[use] ? use : "reply", on:true }; data.cats.push(c); save(); return c; },
+    addCat(name, use, slot){
+      const c = { id: uid(), name, use: USES[use] ? use : "reply", on:true };
+      if (c.use === "part") c.slot = SLOTS[slot] ? +slot : 2;
+      data.cats.push(c); save(); return c;
+    },
     renameCat(id, name){ const c = data.cats.find(x => x.id === id); if (c){ c.name = name; save(); } },
+    setSlot(id, slot){ const c = data.cats.find(x => x.id === id); if (c && SLOTS[slot]){ c.slot = +slot; save(); } },
     toggleCat(id){ const c = data.cats.find(x => x.id === id); if (c){ c.on = !c.on; save(); } },
     removeCat(id){ data.cats = data.cats.filter(c => c.id !== id); data.cards = data.cards.filter(c => c.cat !== id); save(); },
     addCards(cat, texts){ texts.forEach(t => data.cards.push({ id: uid(), cat, text: t })); save(); },
     editCard(id, text){ const c = data.cards.find(x => x.id === id); if (c){ c.text = text; save(); } },
     removeCard(id){ data.cards = data.cards.filter(c => c.id !== id); save(); },
     replaceAll(d){ if (d && Array.isArray(d.cats) && Array.isArray(d.cards)){ data = d; save(); return true; } return false; },
-    pick,
+    pick, compose,
+    pickReply(){ const c = replyCfg(); return (Math.random() * 100 < c.composePct && compose()) || pick("reply") || compose(); },
   };
 })();
 
@@ -6460,7 +6503,10 @@ const REPLY_DEFAULT = {
   minN: 1, maxN: 3,             // 一次回几条
   ignorePct: 5,                 // 已读不回（%）
   proactive: true,              // TA 主动找你
-  proMinMin: 60, proMaxMin: 240 // 隔多久主动找一次（分钟）
+  proMinMin: 60, proMaxMin: 240,// 隔多久主动找一次（分钟）
+  composePct: 30,               // 回话时拼句的概率（%）
+  letterMinH: 1, letterMaxH: 6, // 回信要等多久（小时）
+  letterMinN: 2, letterMaxN: 4  // 一封回信几段
 };
 function replyCfg(){
   let c = {};
@@ -6510,7 +6556,7 @@ const Mock = (() => {
       const n = Math.max(1, Math.round(rand(c.minN, c.maxN)));
       let i = 0;
       const one = () => {
-        const text = EwCards.pick("reply");
+        const text = EwCards.pickReply();
         if (!text){ if (i === 0) emitEvent({ type:"typing", active:false }); return; }
         emitEvent({ type:"typing", active:true });
         setTimeout(() => {
@@ -6518,7 +6564,7 @@ const Mock = (() => {
           if (++i < n) setTimeout(one, rand(600, 1800)); else emitEvent({ type:"typing", active:false });
         }, Math.min(4000, 500 + text.length * 120));
       };
-      if (!EwCards.pick("reply")){ showToast("字卡库还是空的，先去 Cards 加几张吧"); return; }
+      if (!EwCards.pick("reply") && !EwCards.compose()){ showToast("字卡库还是空的，先去 Cards 加几张吧"); return; }
       one();
     }, rand(Math.max(1, c.minSec), Math.max(c.minSec, c.maxSec)) * 1000);
   }
@@ -6596,6 +6642,46 @@ const Mock = (() => {
     replaceAll(list){ messages = Array.isArray(list) ? list : []; nextId = messages.reduce((m, x) => Math.max(m, +x.id || 0), 0) + 1; return EwStore.set("msgs", messages); },
     subscribe: (s) => { subs.push(s); setTimeout(() => s._open(), 120); },
     unsubscribe: (s) => { subs = subs.filter(x => x !== s); }
+  };
+})();
+
+/* 信：[{id, from:"me"|"ta", ts, body, read}]。她寄出一封，TA 的回信马上从「回信」字卡里拼好，
+   ts 写成几小时以后——没到时间就不显示（「TA 在写回信…」） */
+const EwLetters = (() => {
+  let list = [];
+  const ready = (async () => { try{ const s = await EwStore.get("letters"); if (Array.isArray(s)) list = s; }catch(_){} })();
+  const save = () => EwStore.set("letters", list);
+  const now = () => Date.now();
+  const rand = (a, b) => a + Math.random() * (b - a);
+  function write(body){
+    const t = now();
+    list.push({ id: EwCards.uid(), from:"me", ts:t, body, read:true });
+    const c = replyCfg();
+    const n = Math.max(1, Math.round(rand(c.letterMinN, Math.max(c.letterMinN, c.letterMaxN))));
+    const paras = [];
+    for (let i = 0; i < n * 3 && paras.length < n; i++){   // 尽量别抽到同一段
+      const p = EwCards.pick("letter"); if (!p) break;
+      if (!paras.includes(p) || i >= n * 2) paras.push(p);
+    }
+    let replied = false;
+    if (paras.length){
+      list.push({ id: EwCards.uid(), from:"ta", ts: t + rand(c.letterMinH, Math.max(c.letterMinH, c.letterMaxH)) * 3600e3, body: paras.join("\n\n"), read:false });
+      replied = true;
+    }
+    save();
+    return replied;
+  }
+  return {
+    ready,
+    // 到了时间的，新的在前
+    shown: () => list.filter(x => x.ts <= now()).sort((a, b) => b.ts - a.ts),
+    pending: () => list.some(x => x.ts > now()),
+    unread: () => list.some(x => !x.read && x.ts <= now()),
+    write,
+    markRead(id){ const x = list.find(l => l.id === id); if (x && !x.read){ x.read = true; save(); } },
+    remove(id){ list = list.filter(l => l.id !== id); save(); },
+    all: () => list,
+    replaceAll(l){ list = Array.isArray(l) ? l : []; return save(); },
   };
 })();
 
@@ -8849,85 +8935,95 @@ function applyReaction(ev){
   scheduleCacheSave();
 }
 
-/* ════════════ Letter 信纸 ════════════ */
-/* 东京的我写在 notes/letters/letter-YYYY-MM-DD.md；/app/letters 列出来。打开 = 最新一张，「更多」= 以前的列表 */
-let letterItems = [], letterShowing = null;
-function letterDayTitle(d){
-  const [y, m, da] = d.split("-").map(Number);
-  return `${y} 年 ${m} 月 ${da} 日 · 周${"日一二三四五六"[new Date(y, m - 1, da).getDay()]}`;
+/* ════════════ Letter 信（Elsewhere 10-21，全在这台手机上，见 EwLetters） ════════════ */
+/* 三个样子：list 信箱（默认）/ one 看一封 / compose 写一封。草稿存 localStorage ew_letter_draft */
+const LETTER_DRAFT_KEY = "ew_letter_draft";
+let letterView = "list", letterShowing = null;
+function letterDayTitle(ts){
+  const d = new Date(ts);
+  return `${d.getFullYear()} 年 ${d.getMonth() + 1} 月 ${d.getDate()} 日 · 周${"日一二三四五六"[d.getDay()]}`;
 }
-async function fetchLetters(){
-  if (USE_MOCK || !secret) return null;
-  try{
-    const r = await fetch(`${API_BASE}/app/letters`, { headers: authHeaders() });
-    if (!r.ok) return null;
-    const d = await r.json();
-    letterItems = d.items || [];
-    return d;
-  }catch(_){ return null; }
+const taName = () => (peerNameEl && peerNameEl.textContent.trim()) || "TA";
+function refreshLetterDot(){
+  const dot = document.getElementById("letterDot");
+  if (dot) dot.classList.toggle("hidden", !EwLetters.unread());
 }
-async function refreshLetterDot(){
-  const d = await fetchLetters();
-  const dot = document.getElementById("noteDot");
-  if (dot && d) dot.classList.toggle("hidden", !d.unread);
+function letterFoot(back, act){
+  const b = $("#letterBack"), a = $("#letterAct");
+  b.textContent = back || ""; b.classList.toggle("hidden", !back);
+  a.textContent = act || "";  a.classList.toggle("hidden", !act);
 }
-function showLetter(it){
-  letterShowing = it;
-  $("#letterList").classList.add("hidden");
-  $("#letterOne").classList.remove("hidden");
-  $("#letterDate").textContent = letterDayTitle(it.date);
-  $("#letterBody").textContent = it.body;
-  $("#letterMore").textContent = "更多";
-  $("#letterCount").textContent = letterItems.length > 1 ? `一共 ${letterItems.length} 张` : "";
-  if (!it.read){
-    it.read = true;
-    fetch(`${API_BASE}/app/letters/read`, { method:"POST", headers:{ ...authHeaders(), "Content-Type":"application/json" }, body: JSON.stringify({ file: it.file }) })
-      .then(() => refreshLetterDot()).catch(() => {});
-  }
+function letterShow(view){
+  letterView = view;
+  $("#letterPaper").classList.toggle("is-list", view === "list");
+  $("#letterList").classList.toggle("hidden", view !== "list");
+  $("#letterOne").classList.toggle("hidden", view !== "one");
+  $("#letterCompose").classList.toggle("hidden", view !== "compose");
 }
 function showLetterList(){
   letterShowing = null;
-  $("#letterOne").classList.add("hidden");
-  const list = $("#letterList");
-  list.classList.remove("hidden");
-  list.innerHTML = letterItems.map((it, i) => {
+  letterShow("list");
+  const items = EwLetters.shown();
+  const wait = EwLetters.pending() ? `<div class="letter-wait">${escapeHtml(taName())} 在写回信…</div>` : "";
+  $("#letterList").innerHTML = (items.length || wait) ? wait + items.map(it => {
     const first = it.body.split("\n").find(l => l.trim()) || "";
-    return `<button class="letter-item" type="button" data-i="${i}"><b>${escapeHtml(it.date.slice(5).replace("-", "/"))}</b><span>${escapeHtml(first.length > 18 ? first.slice(0, 18) + "…" : first)}</span>${it.read ? "" : "<i></i>"}</button>`;
-  }).join("");
-  $("#letterMore").textContent = "回到最新";
-  $("#letterCount").textContent = `一共 ${letterItems.length} 张`;
+    const d = new Date(it.ts);
+    return `<button class="letter-item" type="button" data-id="${escapeHtml(it.id)}"><b>${d.getMonth() + 1}/${d.getDate()}</b><em>${it.from === "ta" ? escapeHtml(taName()) : "我"}</em><span>${escapeHtml(first.length > 16 ? first.slice(0, 16) + "…" : first)}</span>${it.read ? "" : "<i></i>"}</button>`;
+  }).join("") : `<div class="letter-empty">还没有信<br>写一封给 ${escapeHtml(taName())} 吧</div>`;
+  letterFoot("", "写一封");
+}
+function showLetter(it){
+  letterShowing = it;
+  letterShow("one");
+  $("#letterDate").textContent = letterDayTitle(it.ts);
+  $("#letterBody").textContent = it.body;
+  $("#letterSign").textContent = "—— " + (it.from === "ta" ? taName() : meName());
+  $("#letterOne").scrollTop = 0;
+  letterFoot("返回", it.from === "ta" ? "回一封" : "");
+  EwLetters.markRead(it.id); refreshLetterDot();
+}
+function showLetterCompose(){
+  letterShow("compose");
+  $("#letterNewDate").textContent = letterDayTitle(Date.now());
+  const inp = $("#letterInput");
+  try{ inp.value = localStorage.getItem(LETTER_DRAFT_KEY) || ""; }catch(_){}
+  letterFoot("返回", "寄出");
+  setTimeout(() => inp.focus(), 60);
 }
 async function openLetters(){
   const wrap = $("#letterWrap");
   wrap.classList.add("open"); wrap.setAttribute("aria-hidden", "false");
-  $("#letterDate").textContent = ""; $("#letterBody").textContent = "正在拆信…";
-  $("#letterList").classList.add("hidden"); $("#letterOne").classList.remove("hidden");
-  const d = await fetchLetters();
-  if (!d){ $("#letterBody").textContent = "信箱没打开，等一下再试试"; return; }
-  if (!letterItems.length){
-    $("#letterOne").classList.add("hidden");
-    const list = $("#letterList"); list.classList.remove("hidden");
-    list.innerHTML = `<div class="letter-empty">${d.enabled ? "还没有纸片哦<br>每天 0 点，小克想说什么就会写一张" : "信纸关着呢<br>想收纸片的话去 Setting 里打开"}</div>`;
-    $("#letterMore").textContent = ""; $("#letterCount").textContent = "";
-    return;
-  }
-  showLetter(letterItems.find(it => !it.read) || letterItems[0]);   // 有没读的先看没读的
+  await EwLetters.ready;
+  const unread = EwLetters.shown().find(it => !it.read);
+  if (unread) showLetter(unread); else showLetterList();   // 有没读的回信先拆开
 }
-function closeLetters(){ const w = $("#letterWrap"); w.classList.remove("open"); w.setAttribute("aria-hidden", "true"); }
+function closeLetters(){ const w = $("#letterWrap"); w.classList.remove("open"); w.setAttribute("aria-hidden", "true"); $("#letterInput").blur(); }
 (function setupLetters(){
   const wrap = $("#letterWrap"); if (!wrap) return;
   $("#letterClose").addEventListener("click", closeLetters);
   $("#letterScrim").addEventListener("click", closeLetters);
-  $("#letterMore").addEventListener("click", () => {
-    if (!letterItems.length) return;
-    if (letterShowing) showLetterList(); else showLetter(letterItems[0]);
+  $("#letterBack").addEventListener("click", showLetterList);
+  $("#letterAct").addEventListener("click", () => {
+    if (letterView !== "compose"){ showLetterCompose(); return; }
+    const inp = $("#letterInput"), body = inp.value.trim();
+    if (!body){ inp.focus(); return; }
+    const replied = EwLetters.write(body);
+    inp.value = ""; try{ localStorage.removeItem(LETTER_DRAFT_KEY); }catch(_){}
+    showToast(replied ? `寄出去啦，${taName()} 回信要等一阵` : "寄出去啦，可「回信」字卡还是空的，TA 回不了", 2400);
+    showLetterList();
   });
+  $("#letterInput").addEventListener("input", (e) => { try{ localStorage.setItem(LETTER_DRAFT_KEY, e.target.value); }catch(_){} });
   $("#letterList").addEventListener("click", (e) => {
     const b = e.target.closest(".letter-item"); if (!b) return;
-    showLetter(letterItems[+b.dataset.i]);
+    const it = EwLetters.shown().find(x => x.id === b.dataset.id);
+    if (it) showLetter(it);
   });
   window.addEventListener("keydown", (e) => { if (e.key === "Escape") closeLetters(); });
-  setTimeout(refreshLetterDot, 1500);
+  EwLetters.ready.then(refreshLetterDot);
+  setInterval(() => {   // 回信到时间了：小红点亮；信箱开着就顺手刷新
+    refreshLetterDot();
+    if (wrap.classList.contains("open") && letterView === "list") showLetterList();
+  }, 60e3);
   document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshLetterDot(); });
 })();
 
@@ -9822,7 +9918,6 @@ async function loginWithSecret(val){
     await loadSessions();
     loadBrain();
     loadProactive();
-    loadLetterSwitch();
     loadHeld();
     const msgs = await apiLatestHistory();
     localStorage.setItem(LS_KEY, secret);
@@ -10012,7 +10107,6 @@ async function init(){
   shownConv = currentConv;
   loadBrain();
   loadProactive();
-  loadLetterSwitch();
   loadHeld();
   let showedCache = false;
   const cached = USE_MOCK ? [] : await readCachedMessages();   // Elsewhere：消息本来就在本地，不用另一份缓存
