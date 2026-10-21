@@ -40,6 +40,18 @@
       document.documentElement.setAttribute("data-chatlayout", localStorage.getItem("companion_chat_layout") === "card" ? "card" : "bubble");
     }catch(e){ document.documentElement.setAttribute("data-theme", "light"); }
   })();
+  /* 她自己挑的壁纸也在第一帧前铺上（10-22：原来要等大脚本跑完，会先闪一下默认壁纸）；后面 applyGlobalWall 等照常接管 */
+  (function(){
+    try{
+      var de = document.documentElement, g = localStorage.getItem("companion_wall_global"),
+          c = localStorage.getItem("companion_wall_chat"), l = localStorage.getItem("companion_wall_list"),
+          k = localStorage.getItem("companion_wall_card");
+      if (g){ de.style.setProperty("--wall-default", 'url("' + g + '")'); de.style.setProperty("--menu-wall-default", 'url("' + g + '")'); }
+      if (c) de.style.setProperty("--chat-wall-early", 'url("' + c + '")');
+      if (l){ de.style.setProperty("--list-wall", 'url("' + l + '")'); de.dataset.listwall = "1"; }
+      if (k) de.style.setProperty("--hc-cover", 'url("' + k + '")');
+    }catch(e){}
+  })();
 </script>
 
 <style>
@@ -412,7 +424,7 @@
     height:var(--screen-height);
     z-index:0;
     background-color: var(--bg);
-    background-image: var(--wall-default);
+    background-image: var(--chat-wall-early, var(--wall-default));
     background-size: cover; background-position: center;
     transform: translateZ(0);
     -webkit-transform: translateZ(0);
