@@ -1,6 +1,6 @@
 /* Elsewhere service worker：离线也能打开 + 本地通知点开回到页面。
    改了任何前端文件都要改 CACHE，不然装在桌面上的还是旧的。 */
-const CACHE = "elsewhere-v9";
+const CACHE = "elsewhere-v10";
 const PRECACHE = [
   "./", "./index.html",
   "./chat-light.webp", "./chat-harbor.webp",

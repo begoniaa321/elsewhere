@@ -1605,6 +1605,20 @@
   :root[data-listwall] .conv-panel::before,
   :root[data-listwall][data-look] .conv-panel::before{ background: var(--scrim); -webkit-backdrop-filter:none; backdrop-filter:none; }
   .conv-panel > *{ position:relative; }
+  /* 10-22 她说字卡库「太淡了看不清，换了好几个主题都是」：列表壁纸 + 浅色字主题时浅字压在亮照片上。
+     字卡库、朋友圈都是整页的字，不跟主题走：一律磨砂白底 + 深色字（壁纸还能隐约透出来） */
+  #cardPanel, #momPanel{
+    --text:#2b2f36; --text-soft:#555d6a; --text-faint:#858d99; --hairline:rgba(30,40,55,.12); --bg:#f6f7f9; --accent:#4a5a70;
+    color:var(--text);
+  }
+  #cardPanel::before, #momPanel::before,
+  :root[data-listwall] #cardPanel::before, :root[data-listwall] #momPanel::before,
+  :root[data-look][data-ink] #cardPanel::before, :root[data-look][data-ink] #momPanel::before{
+    background:rgba(246,247,249,.86); -webkit-backdrop-filter:blur(16px); backdrop-filter:blur(16px);
+  }
+  #cardPanel .glass, #momPanel .glass{ background:rgba(255,255,255,.62); color:var(--text); }
+  #cardPanel .segmented button, #momPanel .segmented button{ color:var(--text-soft); }
+  #cardPanel .segmented button.active{ color:var(--text); }
   .cv-head{ display:flex; align-items:center; gap:10px; padding:calc(env(safe-area-inset-top) + 10px) 14px 10px; border-bottom:1px solid var(--hairline); }
   .cv-head .sp-back{ display:grid; }
   .cv-title{ flex:1; text-align:center; font-size:17px; color:var(--text); margin-right:34px; }
