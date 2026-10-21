@@ -9321,6 +9321,10 @@ scrollEl.addEventListener("scroll", () => {
   if (nearBottom()) hideNewMsgPill();
   // 滚动期间不 render、不写 scrollTop,完全交给原生滚动 → 不抖;窗口调整推迟到 onScrollIdle
 }, { passive:true });
+// 底部留白（--composer-zone）变高的动画放完时，本来贴着底的就再贴一次，不然最后一条会被输入框压住
+scrollEl.addEventListener("transitionend", (e) => {
+  if (e.target === scrollEl && e.propertyName === "padding-bottom" && nearBottom()) scrollToBottom();
+});
 
 /* ════════════ 回到最新 · 新消息胶囊 ════════════ */
 function showNewMsgPill(){ if (newMsgBtn) newMsgBtn.classList.add("show"); }
@@ -9448,11 +9452,30 @@ inputEl.addEventListener("input", () => {
   micBtn.classList.add("hidden");
 });
 inputEl.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && !e.shiftKey && !composing){
+  if (e.key === "Enter" && !e.shiftKey && !composing && !e.isComposing){
     e.preventDefault();
     doSend();
   }
 });
+// 10-22：iPhone 中文九宫格按 ↩ 不一定发 keydown Enter，常常是直接「插入换行」——这里也当发送
+inputEl.addEventListener("beforeinput", (e) => {
+  if ((e.inputType === "insertLineBreak" || e.inputType === "insertParagraph") && !e.isComposing){
+    e.preventDefault();
+    composing = false;
+    doSend();
+  }
+});
+// 兜底：上面两个都没拦住、换行已经进了输入框 → 去掉它再发
+inputEl.addEventListener("input", (e) => {
+  // 只认「刚按出来的换行」，粘贴进来的多行字照常保留
+  const nl = e.inputType === "insertLineBreak" || e.inputType === "insertParagraph" || (e.inputType === "insertText" && /\n/.test(e.data || ""));
+  if (e.isComposing || !nl) return;
+  composing = false;
+  const at = inputEl.selectionStart;
+  if (at > 0 && inputEl.value[at - 1] === "\n") inputEl.value = inputEl.value.slice(0, at - 1) + inputEl.value.slice(at);
+  doSend();
+});
+inputEl.addEventListener("blur", () => { composing = false; });
 inputEl.addEventListener("focus", () => setTimeout(scrollToBottom, 60));
 sendBtn.addEventListener("click", doSend);
 
@@ -9487,6 +9510,8 @@ async function doSend(){
   playSendSound();               // 发出反馈音
   rememberPendingOutgoing(tempKey, text, optimisticTs);
   scheduleRender({ stickToBottom:true });
+  // 10-22：连发时新气泡压在输入框底下只露一条边——只滚一次时高度还没定（气泡在弹、底下留白在变），过一会儿再贴几次底
+  [80, 260, 520].forEach(ms => setTimeout(() => scrollToBottom(), ms));
 
   try{
     const { id } = await apiSend(text, null, quote);
