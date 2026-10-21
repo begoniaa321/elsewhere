@@ -2495,6 +2495,10 @@
     -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); }
   .ms-head{ display:flex; align-items:center; justify-content:space-between; font-size:16px; }
   .ms-head button{ border:0; background:transparent; font-size:22px; color: var(--text-faint); }
+  .ms-head b{ margin-right:auto; }
+  .ms-head .ms-add{ font: inherit; font-size:13px; color: var(--accent); padding: 4px 8px; }   /* 10-22 Elsewhere：加歌 / TA 选 */
+  .mc-ta{ flex:none; border:1px solid var(--hairline); border-radius:999px; background:transparent; color: var(--accent); font: inherit; font-size:12px; padding: 3px 9px; margin-right: 4px; }
+  .hm-select + .hm-select{ margin-left: 0; }
   .ms-panel input{ width:100%; padding:9px 12px; border-radius:12px; border:1px solid var(--hairline); background: rgba(255,255,255,.5); color: var(--text); font: inherit; font-size:14px; }
   .ms-panel .ms-lists{ border-top:0; padding: 2px 0 4px; }
   .ms-list{ overflow-y:auto; -webkit-overflow-scrolling: touch; }
@@ -3145,6 +3149,7 @@
     <div class="mc-top">
       <div class="mc-cover"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg></div>
       <div class="mc-meta"><b id="mcTitle">—</b><span id="mcArtist"></span></div>
+      <button class="mc-ta" id="mcTa" type="button" aria-label="让 TA 选一首">TA 选</button>
       <button class="mc-x" id="mcClose" type="button" aria-label="不听了">×</button>
     </div>
     <div class="mc-lyric" id="mcLyric">♪</div>
@@ -3160,7 +3165,7 @@
   </section>
   <div class="music-sheet hidden" id="musicSheet">
     <div class="ms-panel">
-      <div class="ms-head"><b>一起听</b><button type="button" id="msClose" aria-label="收起">×</button></div>
+      <div class="ms-head"><b>一起听</b><button type="button" class="ms-add" id="msAdd">加歌</button><button type="button" class="ms-add" id="msTa">TA 选</button><button type="button" id="msClose" aria-label="收起">×</button></div>
       <input type="search" id="msSearch" placeholder="找歌名或歌手…" autocomplete="off">
       <div class="hm-lists ms-lists" id="msLists"></div>
       <div class="ms-list" id="msList"><div class="ms-empty">正在翻歌单…</div></div>
@@ -3552,6 +3557,7 @@
             <span id="hmBulkN">已选 0 首</span>
             <button type="button" id="hmBulkAdd">加到歌单</button>
             <button type="button" id="hmBulkRemove">移出</button>
+            <button type="button" id="hmBulkDel">删掉</button>
           </div>
         </section>
       </section>
@@ -4193,6 +4199,10 @@ var CardLib = (function(){
         <div class="r"><span>你发的，TA 评论（%）</span><span class="nums">${num("momCommentPct", 0, 100)}</span></div>
         <div class="r"><span>你评论了，TA 回你（%）</span><span class="nums">${num("momReplyPct", 0, 100)}</span></div>
         <div class="r"><span>TA 过多久来（分钟）</span><span class="nums">${num("momReactMinMin", 0, 1440)} ~ ${num("momReactMaxMin", 0, 1440)}</span></div>
+      </div>
+      <div class="cl-sec">一起听设置</div>
+      <div class="glass cl-set">
+        <div class="r"><span>一首放完，TA 来选下一首（%）</span><span class="nums">${num("musTaPickPct", 0, 100)}</span></div>
       </div>
       <div class="cl-foot">
         <button type="button" class="cl-btn" id="clExport">导出字卡</button>
@@ -6493,14 +6503,18 @@ const EwStore = (() => {
   }
   async function set(k, v){
     const d = await db();
-    return new Promise((res) => { const tx = d.transaction("kv", "readwrite"); tx.objectStore("kv").put(v, k); tx.oncomplete = () => res(true); tx.onerror = () => res(false); });
+    return new Promise((res) => { const tx = d.transaction("kv", "readwrite"); tx.objectStore("kv").put(v, k); tx.oncomplete = () => res(true); tx.onerror = () => res(false); tx.onabort = () => res(false); });
   }
-  return { get, set };
+  async function del(k){
+    const d = await db();
+    return new Promise((res) => { const tx = d.transaction("kv", "readwrite"); tx.objectStore("kv").delete(k); tx.oncomplete = () => res(true); tx.onerror = () => res(false); });
+  }
+  return { get, set, del };
 })();
 
 const EwCards = (() => {
   const KEY = "ew_cards";
-  const USES = { reply:"聊天回复", proactive:"TA 主动找你", letter:"回信", moment:"朋友圈" };
+  const USES = { reply:"聊天回复", proactive:"TA 主动找你", letter:"回信", moment:"朋友圈", music:"一起听" };
   const useLabel = (c) => USES[c.use] || "";
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   // v2（10-21）：多了回信，旧字卡库补上这个空分类（只补一次，删了不会再冒出来）
@@ -6508,8 +6522,9 @@ const EwCards = (() => {
     { id:"letter", name:"回信", use:"letter", on:true },
   ];
   function defaults(){
-    return { v:4, cats:[
+    return { v:5, cats:[
       { id:"moment", name:"朋友圈", use:"moment", on:true },
+      { id:"music",  name:"一起听", use:"music",  on:true },
       { id:"daily",  name:"日常",       use:"reply",     on:true },
       { id:"sweet",  name:"情话",       use:"reply",     on:true },
       { id:"comfort",name:"安慰",       use:"reply",     on:true },
@@ -6542,6 +6557,11 @@ const EwCards = (() => {
     if (!(data.v >= 4)){
       if (!data.cats.some(c => c.use === "moment")) data.cats.push({ id:"moment", name:"朋友圈", use:"moment", on:true });
       data.v = 4; save();
+    }
+    // v5（10-22）：一起听 TA 选歌时说的话
+    if (!(data.v >= 5)){
+      if (!data.cats.some(c => c.use === "music")) data.cats.push({ id:"music", name:"一起听", use:"music", on:true });
+      data.v = 5; save();
     }
   }
   function save(){ try{ localStorage.setItem(KEY, JSON.stringify(data)); }catch(_){ showToast("存不下了，手机空间不够"); } }
@@ -6605,6 +6625,7 @@ const REPLY_DEFAULT = {
   momLikePct: 80, momCommentPct: 50,   // 她发的，TA 点赞 / 评论的机会（%）
   momReplyPct: 60,              // 她评论了，TA 回她的机会（%）
   momReactMinMin: 1, momReactMaxMin: 120,  // TA 过多久来（分钟）
+  musTaPickPct: 30,             // 一起听：一首放完，TA 来选下一首的机会（%）
   letterMinN: 2, letterMaxN: 4  // 一封回信几段
 };
 function replyCfg(){
@@ -6729,6 +6750,7 @@ const Mock = (() => {
       scheduleReply();
       return { id: m.id };
     },
+    say(text, meta = {}){ const m = push("ai", text, meta); emit(m); return m; },   // 别的功能让 TA 说一句（一起听：TA 选了歌）
     recall(id){ const m = messages.find(x => String(x.id) === String(id)); if (m){ m.meta = { ...(m.meta || {}), recalled:1 }; persist(); } },
     remove(id){ messages = messages.filter(x => String(x.id) !== String(id)); persist(); },
     react(id, emoji){
@@ -10601,10 +10623,91 @@ if (window.visualViewport){
   applyVV();
 }
 
+/* ── 一起听的歌（Elsewhere 10-22）：没有服务器，歌存在这台手机的 IndexedDB 里 ──
+   她在「一起听」点「加歌」从手机文件里挑 mp3（同名 .lrc 一起挑就带上歌词），文件名「歌手 - 歌名」自动拆开。
+   kv 里：music_meta = [{id,title,artist,lrc,added}]、mf_<id> = 歌的文件（Blob）、ml_<id> = 歌词、music_lists = [{id,name,songs}]
+   下面的播放器还是 LINK 那套，它原来问服务器的 /app/music… 由 api() 转到这里 */
+const EwMusic = (() => {
+  let meta = [], lists = [], loaded = null;
+  const urls = {};   // id → 播放用的 blob: 地址（打开时一次做好，点歌时同步拿到，iPhone 才肯在点击里直接放）
+  function load(){
+    if (loaded) return loaded;
+    loaded = (async () => {
+      try{ meta = (await EwStore.get("music_meta")) || []; }catch(_){ meta = []; }
+      try{ lists = (await EwStore.get("music_lists")) || []; }catch(_){ lists = []; }
+      await Promise.all(meta.map(async s => { try{ const b = await EwStore.get("mf_" + s.id); if (b) urls[s.id] = URL.createObjectURL(b); }catch(_){} }));
+      meta = meta.filter(s => urls[s.id]);
+    })();
+    return loaded;
+  }
+  const saveMeta = () => EwStore.set("music_meta", meta);
+  const saveLists = () => EwStore.set("music_lists", lists);
+  const base = (name) => String(name || "").replace(/\.[^.]+$/, "").trim();
+  function split(name){
+    const b = base(name), i = b.indexOf(" - ");
+    return i > 0 ? { artist: b.slice(0, i).trim(), title: b.slice(i + 3).trim() || b } : { artist: "", title: b };
+  }
+  const songsOut = () => meta.map(s => ({ ...s, url: urls[s.id] }));
+  // 挑进来一堆文件：歌存起来；.lrc 按文件名配给同名的歌（这次挑的、以前加过的都行）
+  async function addFiles(files){
+    await load();
+    const all = [...files];
+    const audios = all.filter(f => /^audio\//.test(f.type) || /\.(mp3|m4a|aac|wav|flac|ogg)$/i.test(f.name));
+    const lrcs = all.filter(f => /\.lrc$/i.test(f.name));
+    try{ if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); }catch(_){}   // 请手机别自己清掉
+    let added = 0, skipped = 0, lyr = 0;
+    for (const f of audios){
+      const { title, artist } = split(f.name);
+      if (meta.some(s => s.title === title && s.artist === artist)){ skipped++; continue; }
+      const id = EwCards.uid();
+      if (!(await EwStore.set("mf_" + id, f))) continue;
+      urls[id] = URL.createObjectURL(f);
+      meta.push({ id, title, artist, lrc: false, added: Date.now() }); added++;
+    }
+    for (const f of lrcs){
+      const { title, artist } = split(f.name);
+      const s = meta.find(x => x.title === title && x.artist === artist) || meta.find(x => x.title === title);
+      if (!s) continue;
+      try{ await EwStore.set("ml_" + s.id, await f.text()); s.lrc = true; lyr++; }catch(_){}
+    }
+    await saveMeta();
+    return { added, skipped, lyr };
+  }
+  async function removeSongs(ids){
+    await load();
+    const set = new Set(ids);
+    for (const id of set){ await EwStore.del("mf_" + id); await EwStore.del("ml_" + id); if (urls[id]){ URL.revokeObjectURL(urls[id]); delete urls[id]; } }
+    meta = meta.filter(s => !set.has(s.id));
+    lists.forEach(l => { l.songs = l.songs.filter(id => !set.has(id)); });
+    await saveMeta(); await saveLists();
+  }
+  // 照 LINK 后端的样子回话，播放器那边一行不用改
+  async function api(path, opts = {}){
+    await load();
+    const method = (opts.method || "GET").toUpperCase(), body = opts.body ? JSON.parse(opts.body) : {};
+    let m;
+    if (path === "/app/music" && method === "GET") return { songs: songsOut(), lists };
+    if ((m = path.match(/^\/app\/music\/([^/]+)\/lrc$/))) return { lrc: (await EwStore.get("ml_" + m[1])) || "" };
+    if (path === "/app/music/now") return {};
+    if (path === "/app/music/lists" && method === "POST"){ const l = { id: EwCards.uid(), name: body.name, songs: [] }; lists.push(l); await saveLists(); return l; }
+    if ((m = path.match(/^\/app\/music\/lists\/([^/]+)(?:\/(add|remove))?$/))){
+      const l = lists.find(x => x.id === m[1]); if (!l) throw new Error("404");
+      if (method === "DELETE"){ lists = lists.filter(x => x !== l); await saveLists(); return {}; }
+      if (method === "PATCH"){ l.name = body.name; await saveLists(); return l; }
+      const ids = body.ids || [];
+      if (m[2] === "add") ids.forEach(id => { if (!l.songs.includes(id)) l.songs.push(id); });
+      if (m[2] === "remove") l.songs = l.songs.filter(id => !ids.includes(id));
+      await saveLists(); return { songs: l.songs };
+    }
+    throw new Error(path + " 404");
+  }
+  return { load, addFiles, removeSongs, api, count: () => meta.length };
+})();
+
 /* ── 一起听 ──────────────────────────────────────────
-   歌在 LINK 自己里放（曲库 /app/music，文件 /chat/music/…）。放着的时候每 20 秒、以及播放/暂停/换歌/拖进度时
-   报一次 /app/music/now；她发消息时后端会顺手告诉小克「你们在听哪首、唱到哪句、哪个歌单」。
-   两个地方能操作同一个播放器：Home 第三页的「一起听」（歌单、多选），聊天页顶上的小卡片（可开可关）。 */
+   （LINK 原来：歌在服务器上，放着的时候报 /app/music/now 给小克。Elsewhere：歌在手机里，见上面 EwMusic）
+   两个地方能操作同一个播放器：Home 第三页的「一起听」（歌单、多选），聊天页顶上的小卡片（可开可关）。
+   10-22 她要「对方也可以选歌」：一首放完，TA 有 musTaPickPct 的机会挑下一首，在聊天里说一声；卡片上「TA 选」随时让 TA 挑 */
 (() => {
   const card = $("#musicCard"), sheet = $("#musicSheet"), audio = $("#musicAudio"), btn = $("#musicBtn");
   if (!card || !audio) return;
@@ -10658,11 +10761,7 @@ if (window.visualViewport){
     }
     return out.sort((a, b) => a.t - b.t);
   }
-  async function api(path, opts = {}){
-    const r = await fetch(API_BASE + path, { ...opts, headers: { ...authHeaders(), "Content-Type": "application/json", ...(opts.headers || {}) } });
-    if (!r.ok) throw new Error(path + " " + r.status);
-    return r.json();
-  }
+  const api = (path, opts) => EwMusic.api(path, opts);   // Elsewhere：不问服务器，问手机里的 EwMusic
   function report(force){
     if (USE_MOCK) return;
     const now = Date.now();
@@ -10672,7 +10771,7 @@ if (window.visualViewport){
     api("/app/music/now", { method: "POST", body: JSON.stringify(body) }).catch(() => {});
   }
   async function loadSongs(force){
-    if ((loaded && !force) || USE_MOCK) return songs;
+    if (loaded && !force) return songs;
     try{ const r = await api("/app/music"); songs = r.songs || []; lists = r.lists || []; loaded = true; }catch(_){}
     if (view !== "all" && !lists.some(l => l.id === view)) view = "all";
     paintHome();
@@ -10693,6 +10792,7 @@ if (window.visualViewport){
       lists.map(l => `<button type="button" class="hm-chip${sheetView === l.id ? " on" : ""}" data-l="${l.id}">${escapeHtml(l.name)}</button>`).join("");
     const q = ($("#msSearch").value || "").trim().toLowerCase();
     const shown = listSongs(sheetView).filter(s => !q || (s.title + " " + s.artist).toLowerCase().includes(q));
+    if (!songs.length){ $("#msList").innerHTML = `<div class="ms-empty">还没有歌<br>点右上「加歌」从手机文件里挑 mp3（同名 .lrc 歌词一起挑）</div>`; return; }
     $("#msList").innerHTML = shown.length ? shown.map(s => `
       <button type="button" class="ms-song${cur && cur.id === s.id ? " on" : ""}" data-id="${s.id}">
         <span class="ms-txt"><b>${escapeHtml(s.title)}</b><span>${escapeHtml(s.artist || "")}${s.lrc ? "" : " · 没有歌词"}</span></span>
@@ -10778,7 +10878,11 @@ if (window.visualViewport){
   audio.addEventListener("pause", () => { saveTotal(); $("#mcPlay").innerHTML = ICON.play; $("#hmPlay").innerHTML = ICON.play; if (cur) report(true); });
   document.addEventListener("visibilitychange", () => { if (document.hidden) saveTotal(); });
   window.addEventListener("pagehide", saveTotal);
-  audio.addEventListener("ended", () => { if (mode === 1){ audio.currentTime = 0; audio.play().catch(() => {}); } else step(1); });
+  audio.addEventListener("ended", () => {
+    if (mode === 1){ audio.currentTime = 0; audio.play().catch(() => {}); return; }
+    if (songs.length > 1 && Math.random() * 100 < replyCfg().musTaPickPct && taPick()) return;   // 这首完了，TA 想选下一首
+    step(1);
+  });
   audio.addEventListener("error", () => { if (cur && audio.getAttribute("src")) showToast("这首没放出来，换一首试试"); });
   const seek = $("#mcSeek");
   seek.addEventListener("input", () => { seeking = true; if (audio.duration) $("#mcCur").textContent = fmt(seek.value / 1000 * audio.duration); });
@@ -10822,6 +10926,7 @@ if (window.visualViewport){
       `<button type="button" class="hm-chip${view === "all" ? " on" : ""}" data-l="all">全部</button>` +
       lists.map(l => `<button type="button" class="hm-chip${view === l.id ? " on" : ""}" data-l="${l.id}">${escapeHtml(l.name)}</button>`).join("") +
       `<button type="button" class="hm-chip add" data-l="+" aria-label="新建歌单">＋</button>` +
+      `<button type="button" class="hm-select" id="hmAddSong">加歌</button>` +
       `<button type="button" class="hm-select" id="hmSelect">${selecting ? "完成" : "选择"}</button>`;
   }
   function paintSongs(){
@@ -10831,7 +10936,7 @@ if (window.visualViewport){
       <button type="button" class="hm-song${cur && cur.id === s.id ? " on" : ""}${picked.has(s.id) ? " sel" : ""}" data-id="${s.id}">
         <i class="ck"></i><span class="tx"><b>${escapeHtml(s.title)}</b><span>${escapeHtml(s.artist || "")}</span></span>
       </button>`).join("")
-      : `<div class="memo-empty">${view === "all" ? "还没有歌" : "这个歌单还是空的。去「全部」里点「选择」，勾几首加进来"}</div>`;
+      : `<div class="memo-empty">${view === "all" ? "还没有歌。点「加歌」从手机文件里挑 mp3，同名的 .lrc 歌词一起挑上就有歌词" : "这个歌单还是空的。去「全部」里点「选择」，勾几首加进来"}</div>`;
     paintBulk();
   }
   function paintBulk(){
@@ -10840,6 +10945,8 @@ if (window.visualViewport){
     $("#hmBulkAdd").disabled = !picked.size;
     $("#hmBulkRemove").disabled = !picked.size || view === "all";
     $("#hmBulkRemove").classList.toggle("hidden", view === "all");
+    $("#hmBulkDel").disabled = !picked.size;
+    $("#hmBulkDel").classList.toggle("hidden", view !== "all");   // 「全部」里才能真删（歌单里只是移出）
   }
   function setSelecting(on){
     selecting = on; picked.clear();
@@ -10885,6 +10992,7 @@ if (window.visualViewport){
   hmLists.addEventListener("click", async (e) => {
     if (longDone){ longDone = false; return; }
     if (e.target.id === "hmSelect"){ setSelecting(!selecting); return; }
+    if (e.target.id === "hmAddSong"){ addSongs(); return; }
     const c = e.target.closest(".hm-chip"); if (!c) return;
     if (c.dataset.l === "+"){ const l = await newList(); if (l){ view = l.id; picked.clear(); paintHome(); } return; }
     view = c.dataset.l; picked.clear(); paintHome();
@@ -10932,13 +11040,50 @@ if (window.visualViewport){
       setSelecting(false);
     }catch(_){ showToast("没移出去，再试一次"); }
   });
+  $("#hmBulkDel").addEventListener("click", async () => {
+    if (!picked.size || !confirm(`从这台手机上删掉这 ${picked.size} 首？要再听得重新加。`)) return;
+    const ids = [...picked];
+    if (cur && ids.includes(cur.id)){ audio.pause(); audio.removeAttribute("src"); cur = null; syncCard(); }
+    await EwMusic.removeSongs(ids); showToast(`删掉了 ${ids.length} 首`);
+    setSelecting(false); await loadSongs(true);
+  });
+
+  /* ---- Elsewhere：加歌、TA 选歌 ---- */
+  function addSongs(){
+    const inp = document.createElement("input");
+    inp.type = "file"; inp.multiple = true; inp.accept = "audio/*,.mp3,.m4a,.flac,.wav,.lrc";
+    inp.onchange = async () => {
+      const files = inp.files ? [...inp.files] : []; if (!files.length) return;
+      showToast("正在存歌…", 1500);
+      const r = await EwMusic.addFiles(files);
+      showToast(r.added || r.lyr ? `加了 ${r.added} 首${r.lyr ? `，配上了 ${r.lyr} 份歌词` : ""}${r.skipped ? `（${r.skipped} 首以前加过）` : ""}` : (r.skipped ? "这些歌以前都加过了" : "没认出歌来，要挑 mp3 这类文件"), 2600);
+      await loadSongs(true); paintSheet();
+    };
+    inp.click();
+  }
+  // TA 挑一首（不跟正在放的重复），换过去，在聊天里说一声；台词从「一起听」字卡抽，空着就说一句默认的
+  function taPick(){
+    const pool = songs.filter(s => !cur || s.id !== cur.id);
+    if (!pool.length){ showToast(songs.length ? "就这一首，TA 没得挑" : "还没有歌，先加几首吧"); return false; }
+    const s = pool[Math.floor(Math.random() * pool.length)];
+    setCard(true);
+    play(s, queue.some(x => x.id === s.id) ? queue : songs, queue.some(x => x.id === s.id) ? queueList : null);
+    $("#mcArtist").textContent = (s.artist ? s.artist + " · " : "") + "TA 选的";
+    const line = EwCards.pick("music") || "这首，想和你一起听";
+    try{ Mock.say(`${line}\n🎵《${s.title}》${s.artist ? " - " + s.artist : ""}`, { music: s.id }); }catch(_){}
+    return true;
+  }
+  $("#mcTa").addEventListener("click", taPick);
+  $("#msTa").addEventListener("click", () => { if (taPick()) closeSheet(); });
+  $("#msAdd").addEventListener("click", addSongs);
+
   $("#hmPlay").addEventListener("click", togglePlay);
   $("#hmPrev").addEventListener("click", () => step(-1));
   $("#hmNext").addEventListener("click", () => step(1));
   // 翻到第三页时再去拿歌单（刚打开 App 可能还没登录好）
   const pager = $("#homePager");
   if (pager) pager.addEventListener("scroll", () => { if (!loaded && pager.scrollLeft > pager.clientWidth * 1.5) loadSongs(); }, { passive: true });
-  setTimeout(() => { if (secret) loadSongs(); }, 1200);
+  setTimeout(() => loadSongs(), 1200);
 
   if ("mediaSession" in navigator){
     try{
