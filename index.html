@@ -6197,6 +6197,7 @@ async function presetSave(i, name){
     if (callTypeRow) callTypeRow.classList.add("hidden");
     if (transcript) transcript.textContent = "";   // 空着就不显示那条（CSS :empty）
     if (opts.incoming){ connect(true); return; }
+    note("你发起了语音通话");
     setCaption("calling");
     timerEl.textContent = "呼叫中";
     setQuote("等 " + taCallName() + " 接", { hint: true, dots: true });
@@ -6210,6 +6211,7 @@ async function presetSave(i, name){
   }
   function connect(incoming){
     connected = true;
+    note(incoming ? "你接听了通话" : `${taCallName()} 接听了通话`);
     startTick();
     setCaption("on call");
     setQuote("", { hint: true });
