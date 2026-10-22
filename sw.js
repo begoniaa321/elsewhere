@@ -1,6 +1,6 @@
 /* Elsewhere service worker：离线也能打开 + 本地通知点开回到页面。
    改了任何前端文件都要改 CACHE，不然装在桌面上的还是旧的。 */
-const CACHE = "elsewhere-v15";
+const CACHE = "elsewhere-v16";
 const PRECACHE = [
   "./", "./index.html",
   "./chat-light.webp", "./chat-harbor.webp",
@@ -26,8 +26,18 @@ self.addEventListener("activate", (e) => {
 self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
   if (e.request.mode === "navigate") {
-    // 页面本身：有网先拿最新的，没网用缓存
-    e.respondWith(fetch(e.request, { cache: "reload" }).catch(() => caches.match("./index.html")));
+    // 页面本身：先拿最新的；网慢（GitHub 在国内常要好几秒，打开一直白屏）超过 1.5 秒就先用缓存，新的下好存起来下次用
+    const net = fetch(e.request, { cache: "reload" }).then((res) => {
+      if (res.ok) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put("./index.html", copy)); }
+      return res;
+    });
+    const slow = new Promise((ok) => setTimeout(ok, 1500)).then(() => caches.match("./index.html"));
+    e.respondWith(
+      Promise.race([net, slow.then((r) => r || net)])
+        .catch(() => caches.match("./index.html"))
+        .then((r) => r || net)
+    );
+    e.waitUntil(net.catch(() => {}));
     return;
   }
   if (e.request.method === "GET" && url.origin === location.origin) {

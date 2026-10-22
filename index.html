@@ -4178,7 +4178,7 @@ function refreshDays(){
   if (menuDaysEl) menuDaysEl.textContent = daysTogether();
 }
 let menuCloseTimer = null;
-function openMenu(){
+function openMenu(instant){
   if (!menuPanel) return;
   menuIsOpen = true; paintTabbar();
   refreshDays();
@@ -4187,6 +4187,11 @@ function openMenu(){
   if (typeof loadHome === "function") loadHome();
   clearTimeout(menuCloseTimer);
   menuPanel.classList.remove("hidden");
+  if (instant){   // 刚打开 App：直接是 Home，不滑进来（10-22：原来会先露一下聊天页再滑过来）
+    menuPanel.style.transition = "none"; menuPanel.classList.add("open");
+    menuPanel.offsetWidth; menuPanel.style.transition = "";
+    return;
+  }
   requestAnimationFrame(() => requestAnimationFrame(() => menuPanel.classList.add("open")));
 }
 function closeMenu(){
@@ -10858,8 +10863,8 @@ function startRealtime(){
 let homeShownOnce = false;
 function startChat(initialMsgs, { connect = true, fromCache = false } = {}){
   loginEl.classList.add("hidden");
+  if (!homeShownOnce){ homeShownOnce = true; openMenu(true); showTab("home"); }   // 打开 App 先到 Home（先铺好 Home 再露出页面）
   appEl.classList.remove("hidden");
-  if (!homeShownOnce){ homeShownOnce = true; showTab("home"); }   // 打开 App 先到 Home
   setConn("offline");
   resetChatState();
 
