@@ -1626,7 +1626,20 @@
   .cl-set .nums{ display:flex; align-items:center; gap:6px; color:var(--text-faint); font-size:13px; }
   .cl-set input[type=number]{ width:58px; padding:5px 6px; border:1px solid var(--hairline); border-radius:8px; background:rgba(255,255,255,.55); color:var(--text); font:inherit; font-size:14px; text-align:center; }
   .cl-cat .cv-av{ font-size:15px; }
-  #clNewUse{ flex:1 1 100%; grid-auto-flow:row; grid-template-columns:repeat(2, 1fr); }
+  .cl-funcs{ padding:2px 14px; }
+  .cl-func{ border-bottom:1px solid var(--hairline); }
+  .cl-func:last-child{ border-bottom:0; }
+  .cl-func summary{ list-style:none; display:flex; align-items:center; gap:10px; padding:11px 0; cursor:pointer; font-size:14.5px; }
+  .cl-func summary::-webkit-details-marker{ display:none; }
+  .cl-func summary b{ flex:none; font-weight:500; color:var(--text); }
+  .cl-func summary span{ flex:1; min-width:0; text-align:right; font-size:12.5px; color:var(--text-faint); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cl-func summary::after{ content:"›"; flex:none; color:var(--text-faint); transition:transform .2s; }
+  .cl-func[open] summary::after{ transform:rotate(90deg); }
+  .cl-chips.cl-func-chips{ justify-content:flex-start; padding:0 0 12px; }
+  .cl-new-uses{ flex:1 1 100%; display:flex; flex-direction:column; gap:6px; }
+  .cl-new-uses small{ font-size:12.5px; color:var(--text-faint); }
+  .cl-new-uses .cl-chips, .cl-chips.cl-cat-uses{ justify-content:flex-start; }
+  .cl-chips.cl-cat-uses{ padding:4px 16px 4px; }
   .cl-set .r.cl-joins{ flex-wrap:wrap; }
   .cl-chips{ display:flex; flex-wrap:wrap; gap:6px; justify-content:flex-end; }
   .cl-on{ flex:none; padding:4px 10px; border-radius:999px; border:1px solid var(--hairline); background:transparent; color:var(--text-soft); font:inherit; font-size:12.5px; }
@@ -4333,7 +4346,8 @@ var CardLib = (function(){
     <div class="cv-body" id="clBody"></div>`;
   document.body.appendChild(panel);
   const body = panel.querySelector("#clBody"), title = panel.querySelector("#clTitle");
-  let catId = null, newUse = "reply", closeTimer = null;
+  let catId = null, newUses = new Set(["reply"]), closeTimer = null;
+  const openFuncs = new Set();   // 「每个功能用哪些字卡」里点开着的那几个（重画时保持打开）
   let picking = false, picked = new Set();   // 多选删除（10-22）：分类页选分类，分类里选字卡
   const esc = (s) => escapeHtml(String(s == null ? "" : s));
   const stopPick = () => { picking = false; picked = new Set(); };
@@ -4357,12 +4371,22 @@ var CardLib = (function(){
           ${picking ? ck(cat.id) : `<button type="button" class="cl-on${cat.on ? " on" : ""}" data-toggle="${esc(cat.id)}">${cat.on ? "在用" : "停用"}</button>`}
         </div>`).join("") : `<div class="cl-empty">还没有分类</div>`;
     if (picking){ body.innerHTML = pickBar(cats.length) + list; return; }
+    // 10-22 她要的：每个功能自己勾用哪几类字卡（一类可以同时给好几个功能）。点开一个功能才露出勾选
+    const funcs = Object.entries(EwCards.USES).map(([u, label]) => {
+      const mine = EwCards.catsFor(u);
+      return `<details class="cl-func"${openFuncs.has(u) ? " open" : ""} data-func="${u}">
+        <summary><b>${esc(label)}</b><span>${mine.length ? esc(mine.map(c => c.name).join("、")) : "还没勾"}</span></summary>
+        <div class="cl-chips cl-func-chips">${cats.map(c => `<button type="button" class="cl-on${mine.includes(c) ? " on" : ""}" data-fuse="${u}" data-fcat="${esc(c.id)}">${esc(c.name)}</button>`).join("") || `<span class="cl-empty">先在下面加分类</span>`}</div>
+      </details>`;
+    }).join("");
     body.innerHTML = `
+      <div class="cl-sec">每个功能用哪些字卡</div>
+      <div class="glass cl-set cl-funcs">${funcs}</div>
       <div class="cl-sec cl-sec-row"><span>分类</span>${cats.length ? `<button type="button" class="cl-pick" data-pk="start">多选</button>` : ""}</div>
       ${list}
       <div class="cl-new">
         <input id="clNewName" type="text" maxlength="20" placeholder="新分类的名字">
-        <div class="segmented" id="clNewUse" role="group">${Object.entries(EwCards.USES).map(([k, v]) => `<button type="button" data-use="${k}" class="${k === newUse ? "active" : ""}">${v}</button>`).join("")}</div>
+        <div class="cl-new-uses"><small>给哪些功能用（可以多选，以后也能改）</small><span class="cl-chips">${Object.entries(EwCards.USES).map(([k, v]) => `<button type="button" data-use="${k}" class="cl-on${newUses.has(k) ? " on" : ""}">${v}</button>`).join("")}</span></div>
         <button type="button" class="cl-btn" id="clNewBtn">加分类</button>
       </div>
       <div class="cl-sec">回复设置</div>
@@ -4423,7 +4447,10 @@ var CardLib = (function(){
     const cards = EwCards.cardsOf(id);
     const list = cards.slice().reverse().map(k => `<div class="cl-card" data-card="${esc(k.id)}"><span class="t">${esc(k.text)}</span>${picking ? ck(k.id) : `<button type="button" class="x" data-del="${esc(k.id)}" aria-label="删掉">×</button>`}</div>`).join("");
     if (picking){ body.innerHTML = pickBar(cards.length) + list; return; }
+    const uses = EwCards.usesOf(cat);
     body.innerHTML = `
+      <div class="cl-sec">这一类给哪些功能用</div>
+      <div class="cl-cat-uses cl-chips">${Object.entries(EwCards.USES).map(([k, v]) => `<button type="button" class="cl-on${uses.includes(k) ? " on" : ""}" data-catuse="${k}">${v}</button>`).join("")}</div>
       <div class="cl-add">
         <textarea id="clText" placeholder="一行一张"></textarea>
         <button type="button" class="cl-btn" id="clAddBtn">加进去</button>
@@ -4436,6 +4463,10 @@ var CardLib = (function(){
       </div>`;
   }
   function paint(){ if (catId) paintCat(catId); else paintHome(); }
+  body.addEventListener("toggle", (e) => {   // 记住哪些功能是点开的（toggle 不冒泡，用捕获）
+    const d = e.target; if (!d.dataset || !d.dataset.func) return;
+    d.open ? openFuncs.add(d.dataset.func) : openFuncs.delete(d.dataset.func);
+  }, true);
 
   body.addEventListener("click", (e) => {
     const t = e.target;
@@ -4471,11 +4502,23 @@ var CardLib = (function(){
     }
     const tg = t.closest("[data-toggle]");
     if (tg){ e.stopPropagation(); EwCards.toggleCat(tg.dataset.toggle); paintHome(); return; }
+    const fu = t.closest("[data-fuse]");
+    if (fu){   // 某个功能勾 / 取消一类
+      const c = EwCards.cats().find(x => x.id === fu.dataset.fcat);
+      if (c){ EwCards.setUse(c.id, fu.dataset.fuse, !EwCards.usesOf(c).includes(fu.dataset.fuse)); const top = body.scrollTop; paintHome(); body.scrollTop = top; }
+      return;
+    }
+    const cu = t.closest("[data-catuse]");
+    if (cu){   // 分类里面：这一类给哪些功能用
+      const c = EwCards.cats().find(x => x.id === catId);
+      if (c){ EwCards.setUse(c.id, cu.dataset.catuse, !EwCards.usesOf(c).includes(cu.dataset.catuse)); const top = body.scrollTop; paintCat(catId); body.scrollTop = top; }
+      return;
+    }
     const use = t.closest("[data-use]");
     if (use){
-      newUse = use.dataset.use;
-      const name = body.querySelector("#clNewName").value;   // 重画会清掉输入框，先记着
-      paintHome(); body.querySelector("#clNewName").value = name; return;
+      const k = use.dataset.use; newUses.has(k) ? newUses.delete(k) : newUses.add(k);
+      const name = body.querySelector("#clNewName").value, top = body.scrollTop;   // 重画会清掉输入框，先记着
+      paintHome(); body.querySelector("#clNewName").value = name; body.scrollTop = top; return;
     }
     const jn = t.closest("[data-join]");
     if (jn){
@@ -4486,7 +4529,7 @@ var CardLib = (function(){
     if (t.closest("#clNewBtn")){
       const inp = body.querySelector("#clNewName"), name = inp.value.trim();
       if (!name){ inp.focus(); return; }
-      const c = EwCards.addCat(name, newUse); paintCat(c.id); return;
+      const c = EwCards.addCat(name, [...newUses]); paintCat(c.id); return;
     }
     if (t.closest("#clPro")){ const c = replyCfg(); c.proactive = !c.proactive; saveReplyCfg(c); paintHome(); return; }
     if (t.closest("#clKeep")){ EwKeepAlive.toggle(); paintHome(); return; }
@@ -6891,7 +6934,10 @@ const EwCards = (() => {
     { id:"poke",  name:"戳一戳",   use:"poke",  on:true },
     { id:"tarot", name:"塔罗",     use:"tarot", on:true },
   ];
-  const useLabel = (c) => USES[c.use] || "";
+  // v7（10-22 她说的）：分类和功能分开——一类字卡可以同时给好几个功能用，每个功能自己勾要哪几类。
+  // cat.uses = ["reply","call",…]（旧的 cat.use 留着当第一个，导出给旧版本也认得）
+  const usesOf = (c) => Array.isArray(c.uses) ? c.uses : (c.use ? [c.use] : []);
+  const useLabel = (c) => usesOf(c).map(u => USES[u]).filter(Boolean).join(" · ") || "还没给哪个功能用";
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   // v2（10-21）：多了回信，旧字卡库补上这个空分类（只补一次，删了不会再冒出来）
   const V2_CATS = [
@@ -6944,6 +6990,10 @@ const EwCards = (() => {
       V6_CATS.forEach(c => { if (!data.cats.some(x => x.use === c.use)) data.cats.push({ ...c }); });
       data.v = 6; save();
     }
+    if (!(data.v >= 7)){
+      data.cats.forEach(c => { if (!Array.isArray(c.uses)) c.uses = c.use ? [c.use] : []; });
+      data.v = 7; save();
+    }
   }
   function save(){ try{ localStorage.setItem(KEY, JSON.stringify(data)); }catch(_){ showToast("存不下了，手机空间不够"); } }
   function poolOf(test){
@@ -6951,11 +7001,11 @@ const EwCards = (() => {
     return data.cards.filter(c => cats.has(c.cat) && c.text);
   }
   const one = (pool) => pool.length ? pool[Math.floor(Math.random() * pool.length)].text : null;
-  function pick(use){ return one(poolOf(c => c.use === use)); }
+  function pick(use){ return one(poolOf(c => usesOf(c).includes(use))); }
   // 拼句：聊天回复字卡里抽 composeMinN~composeMaxN 张不重复的，每两张之间放一个随机标点（composeJoins 里开着的）；不到两张就返回 null
   function compose(){
     const cfg = replyCfg();
-    const texts = [...new Set(poolOf(c => c.use === "reply").map(c => c.text))];
+    const texts = [...new Set(poolOf(c => usesOf(c).includes("reply")).map(c => c.text))];
     if (texts.length < 2) return null;
     const lo = Math.max(2, cfg.composeMinN), hi = Math.max(lo, cfg.composeMaxN);
     const want = Math.min(texts.length, lo + Math.floor(Math.random() * (hi - lo + 1)));
@@ -6966,15 +7016,23 @@ const EwCards = (() => {
     return segs.reduce((s, t) => s + joins[Math.floor(Math.random() * joins.length)] + t);
   }
   return {
-    USES, useLabel, uid,
+    USES, useLabel, usesOf, uid,
     all: () => data,
     cats: () => data.cats,
     cardsOf: (cat) => data.cards.filter(c => c.cat === cat),
     count: (cat) => data.cards.filter(c => c.cat === cat).length,
-    addCat(name, use){
-      const c = { id: uid(), name, use: USES[use] ? use : "reply", on:true };
+    addCat(name, uses){
+      uses = (Array.isArray(uses) ? uses : [uses]).filter(u => USES[u]);
+      const c = { id: uid(), name, use: uses[0] || "", uses, on:true };
       data.cats.push(c); save(); return c;
     },
+    // 勾 / 取消：这个功能用不用这一类
+    setUse(catId, use, on){
+      const c = data.cats.find(x => x.id === catId); if (!c || !USES[use]) return;
+      const s = new Set(usesOf(c)); on ? s.add(use) : s.delete(use);
+      c.uses = Object.keys(USES).filter(u => s.has(u)); c.use = c.uses[0] || ""; save();
+    },
+    catsFor: (use) => data.cats.filter(c => usesOf(c).includes(use)),
     renameCat(id, name){ const c = data.cats.find(x => x.id === id); if (c){ c.name = name; save(); } },
     toggleCat(id){ const c = data.cats.find(x => x.id === id); if (c){ c.on = !c.on; save(); } },
     removeCat(id){ data.cats = data.cats.filter(c => c.id !== id); data.cards = data.cards.filter(c => c.cat !== id); save(); },
@@ -6989,9 +7047,10 @@ const EwCards = (() => {
       const catMap = {}, r = { cats:0, add:0, dup:0 };
       d.cats.forEach(c => {
         if (!c || !c.id) return;
-        const hit = data.cats.find(x => x.id === c.id) || data.cats.find(x => x.name === c.name && x.use === c.use);
+        const hit = data.cats.find(x => x.id === c.id) || data.cats.find(x => x.name === c.name);   // 同名的就是同一类，她勾好的功能不动
         if (hit){ catMap[c.id] = hit.id; return; }
-        const nc = { id: c.id, name: String(c.name || "导入的"), use: USES[c.use] ? c.use : "reply", on: c.on !== false };
+        const uses = usesOf(c).filter(u => USES[u]);
+        const nc = { id: c.id, name: String(c.name || "导入的"), use: uses[0] || "", uses, on: c.on !== false };
         data.cats.push(nc); catMap[c.id] = nc.id; r.cats++;
       });
       const byId = new Map(data.cards.map(k => [k.id, k]));
