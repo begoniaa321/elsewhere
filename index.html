@@ -1739,6 +1739,9 @@
   .dd-colors button{ width:30px; height:30px; border-radius:50%; border:1px solid rgba(0,0,0,.12); padding:0; }
   .dd-colors button.on{ box-shadow:0 0 0 2px #fff, 0 0 0 4px var(--text); }
   .dd-row{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+  .dd-keys{ display:grid; grid-template-columns:repeat(7, 1fr); gap:6px; }
+  .dd-keys button{ height:36px; border-radius:9px; border:1px solid var(--hairline); background:rgba(255,255,255,.6); color:var(--text); font:inherit; font-size:15px; font-weight:600; padding:0; }
+  .dd-keys button:active{ background:var(--text); color:var(--bg); }
   .dd-size{ width:38px; height:36px; border-radius:10px; border:1px solid var(--hairline); background:rgba(255,255,255,.6); display:grid; place-items:center; padding:0; }
   .dd-size i{ display:block; border-radius:50%; background:var(--text); }
   .dd-size.on, .ew-page .cl-btn.on{ background:var(--text); border-color:transparent; color:var(--bg); }
@@ -4369,6 +4372,7 @@ var CardLib = (function(){
         <div class="r"><span>已读不回（%）</span><span class="nums">${num("ignorePct", 0, 100)}</span></div>
         <div class="r"><span>拼句的机会（%）</span><span class="nums">${num("composePct", 0, 100)}</span></div>
         <div class="r"><span>TA 发表情包（%）</span><span class="nums">${num("stickerPct", 0, 100)}</span></div>
+        <div class="r"><span>TA 画涂鸦给你（%）</span><span class="nums">${num("doodlePct", 0, 100)}</span></div>
         <div class="r"><span>拼句用几张</span><span class="nums">${num("composeMinN", 2, 10)} ~ ${num("composeMaxN", 2, 10)}</span></div>
         <div class="r cl-joins"><span>中间用的标点</span><span class="cl-chips">${Object.entries(COMPOSE_JOIN_NAMES).map(([k, v]) => `<button type="button" class="cl-on${(c.composeJoins || []).includes(k) ? " on" : ""}" data-join="${k}">${esc(v)}</button>`).join("")}</span></div>
         <div class="r"><span>TA 主动找你</span><button type="button" class="cl-on${c.proactive ? " on" : ""}" id="clPro">${c.proactive ? "开" : "关"}</button></div>
@@ -4405,6 +4409,7 @@ var CardLib = (function(){
       <div class="cl-sec">通知</div>
       <div class="glass cl-set">
         <div class="r"><span>切到别的 App 时，TA 来消息弹通知</span><button type="button" class="cl-on${EwNotify.on() ? " on" : ""}" id="clNotify">${EwNotify.on() ? "开" : "关"}</button></div>
+        <div class="r"><span>后台保活<br><small>放一段听不见的声音，手机就不会把网页停掉</small></span><button type="button" class="cl-on${EwKeepAlive.on() ? " on" : ""}" id="clKeep">${EwKeepAlive.on() ? "开" : "关"}</button></div>
       </div>
       <div class="cl-foot">
         <button type="button" class="cl-btn" id="clExport">导出字卡</button>
@@ -4484,6 +4489,7 @@ var CardLib = (function(){
       const c = EwCards.addCat(name, newUse); paintCat(c.id); return;
     }
     if (t.closest("#clPro")){ const c = replyCfg(); c.proactive = !c.proactive; saveReplyCfg(c); paintHome(); return; }
+    if (t.closest("#clKeep")){ EwKeepAlive.toggle(); paintHome(); return; }
     if (t.closest("#clNotify")){
       if (EwNotify.on()){ EwNotify.disable(); paintHome(); }
       else EwNotify.enable().then(ok => { if (ok) showToast("开好了"); paintHome(); });
@@ -7030,6 +7036,7 @@ const REPLY_DEFAULT = {
   callPct: 3,                   // 每隔 15~60 分钟，TA 打过来的机会（%，她记得的 3%）
   pokeBackPct: 60,              // 她戳一戳，TA 回一下的机会（%）
   stickerPct: 15,               // TA 回话时发一张表情包的机会（%，从她导入的里挑）
+  doodlePct: 5,                 // TA 回话时画一张涂鸦的机会（%，照 Sean；她刚发过涂鸦就是 30）
   letterMinN: 2, letterMaxN: 4  // 一封回信几段
 };
 function replyCfg(){
@@ -7059,9 +7066,12 @@ const Mock = (() => {
   }
   function emit(m){
     subs.forEach(s => s._deliver(m));
-    if (m.from === "ai"){   // 切到别的 App 时弹通知（EwNotify 里会看开没开、页面是不是在后台）
+    if (m.from === "ai"){
       const atts = (m.meta && m.meta.attachments) || [];
-      try{ EwNotify.show(taName(), m.text || (atts.some(a => a.sticker) ? "[表情包]" : "[图片]")); }catch(_){}
+      const prev = m.text || (atts.some(a => a.sticker) ? "[表情包]" : (atts.some(a => a.doodle) ? "[涂鸦]" : "[图片]"));
+      try{ EwNotify.show(taName(), prev); }catch(_){}   // 切到别的 App 时弹系统通知（EwNotify 里会看开没开、页面是不是在后台）
+      // 网页开着但不在聊天页（Home、字卡库、塔罗这些）：顶上冒一句（照 Sean 那个站）
+      try{ if (!document.hidden && (menuIsOpen || document.querySelector(".conv-panel.open"))) showToast(`${taName()}：${String(prev).replace(/\s+/g, " ").slice(0, 28)}`, 2600); }catch(_){}
     }
   }
   function emitEvent(ev){ subs.forEach(s => s._deliver(ev)); }
@@ -7077,6 +7087,40 @@ const Mock = (() => {
     return 0;
   }
 
+  // TA 的随手涂鸦（照 Sean 的 generateSeanDoodle）：乱线条 / 几个色块 / 一个词，三选一
+  function taDoodle(){
+    try{
+      const cv = document.createElement("canvas"); cv.width = 260; cv.height = 180;
+      const x = cv.getContext("2d");
+      x.fillStyle = "#fff8f8"; x.fillRect(0, 0, 260, 180);
+      const colors = ["#e0605a", "#4f8fd8", "#62b07a", "#f0a33c", "#9a78d0", "#f29bb6"];
+      const mode = Math.floor(Math.random() * 3);
+      if (mode === 0){
+        for (let k = 0; k < 4; k++){
+          x.beginPath(); x.strokeStyle = colors[k % colors.length]; x.lineWidth = 3; x.lineCap = "round";
+          x.moveTo(Math.random() * 260, Math.random() * 180);
+          for (let j = 0; j < 6; j++) x.quadraticCurveTo(Math.random() * 260, Math.random() * 180, Math.random() * 260, Math.random() * 180);
+          x.stroke();
+        }
+      } else if (mode === 1){
+        x.globalAlpha = 0.7;
+        for (let k = 0; k < 6; k++){
+          x.fillStyle = colors[k % colors.length]; x.beginPath();
+          const cx = Math.random() * 200 + 30, cy = Math.random() * 140 + 20, r = Math.random() * 25 + 10;
+          Math.random() < 0.5 ? x.arc(cx, cy, r, 0, Math.PI * 2) : x.rect(cx - r, cy - r, r * 2, r * 1.5);
+          x.fill();
+        }
+        x.globalAlpha = 1;
+      } else {
+        const words = ["Hi", "❤", "想你", "zzz", "🐾", "晚安", "嘿", meName()];
+        x.font = "bold 52px sans-serif"; x.textAlign = "center"; x.textBaseline = "middle";
+        x.fillStyle = colors[Math.floor(Math.random() * colors.length)];
+        x.fillText(words[Math.floor(Math.random() * words.length)], 130, 90);
+      }
+      return cv.toDataURL("image/png");
+    }catch(_){ return null; }
+  }
+
   // 你说完一阵没再说话 → TA 才开始回（像真人等你打完字）
   function scheduleReply(){
     clearTimeout(replyTimer);
@@ -7086,6 +7130,20 @@ const Mock = (() => {
       const n = Math.max(1, Math.round(rand(c.minN, c.maxN)));
       let i = 0;
       const one = () => {
+        // 10-22：TA 偶尔画一张涂鸦发过来（照 Sean：默认 5%；她刚发过涂鸦的话 30%）
+        const drew = Date.now() - (window.__ewDoodleSentAt || 0) < 10 * 60e3;
+        if (Math.random() * 100 < (drew ? 30 : c.doodlePct)){
+          const url = taDoodle();
+          if (url){
+            window.__ewDoodleSentAt = 0;
+            emitEvent({ type:"typing", active:true });
+            setTimeout(() => {
+              emit(push("ai", "", { attachments: [{ url, name: "涂鸦.png", mime: "image/png", kind: "image", doodle: 1 }] }));
+              if (++i < n) setTimeout(one, rand(600, 1800)); else emitEvent({ type:"typing", active:false });
+            }, 2500);
+            return;
+          }
+        }
         // 10-22：偶尔丢一张她导入的表情包（照 Sean 那个站，默认 15%）
         const stk = Math.random() * 100 < c.stickerPct ? EwStickers.pick() : null;
         if (stk){
@@ -10344,6 +10402,7 @@ var Doodle = (function(){
           <button type="button" class="cl-btn" data-dd="undo">撤销</button>
           <button type="button" class="cl-btn danger" data-dd="clear">清空</button>
         </div>
+        <div class="dd-keys">${"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map(ch => `<button type="button" data-key="${ch}">${ch}</button>`).join("")}<button type="button" data-key="❤">❤</button><button type="button" data-key="☆">☆</button></div>
         <div class="dd-row">
           <button type="button" class="cl-btn" data-dd="keep">存进本子</button>
           <button type="button" class="cl-btn dd-go" data-dd="send">发给 TA</button>
@@ -10401,6 +10460,7 @@ var Doodle = (function(){
     if (!blob) return;
     if (!list.some(d => d.url === toUrl())) keep();   // 发出去的也留一张在本子里
     const file = new File([blob], "涂鸦.png", { type: "image/png" });
+    window.__ewDoodleSentAt = Date.now();   // TA 这次回话更可能也画一张给她
     pg.close();
     if (menuIsOpen){ closeMenu(); openConv(LEGACY_SESSION_ID); }
     setTimeout(() => sendOneFile(file), 380);
@@ -10409,6 +10469,15 @@ var Doodle = (function(){
   pg.body.addEventListener("click", (e) => {
     const c = e.target.closest("[data-color]"); if (c){ color = c.dataset.color; eraser = false; paintTools(); return; }
     const s = e.target.closest("[data-size]"); if (s){ size = +s.dataset.size; paintTools(); return; }
+    const key = e.target.closest("[data-key]");
+    if (key){   // 字母键（照 Sean）：用现在的颜色，印在画布上随便一个地方
+      undo.push(ctx.getImageData(0, 0, cv.width, cv.height)); if (undo.length > 20) undo.shift();
+      const w = cv.width / dpr, h = cv.height / dpr, fs = 30 + size * 2;
+      ctx.save(); ctx.font = `bold ${fs}px sans-serif`; ctx.fillStyle = eraser ? COLORS[0] : color;
+      ctx.translate(15 + Math.random() * (w - fs - 30) + fs / 2, fs + Math.random() * (h - fs - 20));
+      ctx.rotate((Math.random() - 0.5) * 0.5); ctx.textAlign = "center"; ctx.fillText(key.dataset.key, 0, 0); ctx.restore();
+      dirty = true; return;
+    }
     const del = e.target.closest("[data-delpage]");
     if (del){ e.stopPropagation(); if (confirm("删掉这一页？")){ list = list.filter(d => d.id !== del.dataset.delpage); save(); paintBook(); } return; }
     const page = e.target.closest("[data-page]");
@@ -10461,6 +10530,57 @@ const EwNotify = (() => {
     }catch(_){ try{ new Notification(title, { body }); }catch(_){} }
   }
   return { on, enable, disable, show };
+})();
+
+/* ── 后台保活（照传讯 milk 的 keepaliveAudio）：循环放一段静音，手机当网页在放歌，切到后台也不会马上把它停掉，
+   TA 的回复、主动找你、通话这些计时才走得动，通知才弹得出来。静音是这里现做的 wav，不用外面的文件。
+   一起听在放歌的时候让路（同时放两个，iPhone 会把其中一个掐掉） ── */
+const EwKeepAlive = (() => {
+  const KEY = "ew_keepalive";
+  let audio = null, waitingTap = false;
+  const on = () => { try{ return localStorage.getItem(KEY) === "on"; }catch(_){ return false; } };
+  const music = () => document.getElementById("musicAudio");
+  const musicPlaying = () => { const m = music(); return !!(m && !m.paused && !m.ended); };
+  function silentUrl(){   // 2 秒、8kHz、全是 0 的 wav
+    const sr = 8000, n = sr * 2, buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
+    const w = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+    w(0, "RIFF"); v.setUint32(4, 36 + n * 2, true); w(8, "WAVE"); w(12, "fmt "); v.setUint32(16, 16, true);
+    v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true);
+    v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, "data"); v.setUint32(40, n * 2, true);
+    return URL.createObjectURL(new Blob([buf], { type: "audio/wav" }));
+  }
+  function el(){
+    if (audio) return audio;
+    audio = new Audio(silentUrl());
+    audio.loop = true; audio.volume = 0.01; audio.preload = "auto";
+    audio.setAttribute("playsinline", "");
+    return audio;
+  }
+  function start(){
+    if (!on() || musicPlaying()) return;
+    const p = el().play();
+    if (p && p.catch) p.catch(() => {   // 还没点过页面，浏览器不让放：等她下一次点屏幕
+      if (waitingTap) return;
+      waitingTap = true;
+      const unlock = () => { waitingTap = false; start(); };
+      document.addEventListener("touchstart", unlock, { once: true, passive: true });
+      document.addEventListener("click", unlock, { once: true });
+    });
+  }
+  function stop(){ if (audio) audio.pause(); }
+  function toggle(){
+    const next = !on();
+    try{ localStorage.setItem(KEY, next ? "on" : "off"); }catch(_){}
+    if (next){ start(); showToast("后台保活开了"); } else { stop(); showToast("后台保活关了"); }
+  }
+  const m = music();
+  if (m){
+    m.addEventListener("play", stop);
+    ["pause", "ended"].forEach(ev => m.addEventListener(ev, () => setTimeout(start, 300)));
+  }
+  document.addEventListener("visibilitychange", () => { if (!document.hidden && audio && audio.paused) start(); });   // 被别的 App 的声音打断过，回来接着放
+  start();
+  return { on, toggle, start };
 })();
 
 /* ════════════ 长按气泡 · 复制菜单 (TG 式:遮罩 + 抬起 + 动作条) ════════════ */
