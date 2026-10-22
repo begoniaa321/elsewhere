@@ -1152,6 +1152,7 @@
   .plus-item{ border:none; background:transparent; padding:0; display:flex; flex-direction:column; align-items:center; gap:7px; cursor:pointer; font:inherit; color: var(--text, #2c3440); -webkit-tap-highlight-color: transparent; }
   .plus-ic{ width: 58px; height: 58px; border-radius: 17px; display:grid; place-items:center; background: rgba(255,255,255,.62); }
   .plus-ic svg{ width: 27px; height: 27px; }
+  .plus-emo{ font-size: 26px; line-height: 1; }
   .plus-item:active .plus-ic{ transform: scale(.94); }
   .plus-name{ font-family: var(--font-cn); font-size: 12.5px; }
   /* 语音转文字 */
@@ -1663,18 +1664,89 @@
   .conv-panel > *{ position:relative; }
   /* 10-22 她说字卡库「太淡了看不清，换了好几个主题都是」：列表壁纸 + 浅色字主题时浅字压在亮照片上。
      字卡库、朋友圈都是整页的字，不跟主题走：一律磨砂白底 + 深色字（壁纸还能隐约透出来） */
-  #cardPanel, #momPanel{
+  #cardPanel, #momPanel, .ew-page{
     --text:#2b2f36; --text-soft:#555d6a; --text-faint:#858d99; --hairline:rgba(30,40,55,.12); --bg:#f6f7f9; --accent:#4a5a70;
     color:var(--text);
   }
   #cardPanel::before, #momPanel::before,
   :root[data-listwall] #cardPanel::before, :root[data-listwall] #momPanel::before,
-  :root[data-look][data-ink] #cardPanel::before, :root[data-look][data-ink] #momPanel::before{
+  :root[data-look][data-ink] #cardPanel::before, :root[data-look][data-ink] #momPanel::before,
+  .ew-page::before, :root[data-listwall] .ew-page::before, :root[data-look][data-ink] .ew-page::before{
     background:rgba(246,247,249,.86); -webkit-backdrop-filter:blur(16px); backdrop-filter:blur(16px);
   }
-  #cardPanel .glass, #momPanel .glass{ background:rgba(255,255,255,.62); color:var(--text); }
-  #cardPanel .segmented button, #momPanel .segmented button{ color:var(--text-soft); }
-  #cardPanel .segmented button.active{ color:var(--text); }
+  #cardPanel .glass, #momPanel .glass, .ew-page .glass{ background:rgba(255,255,255,.62); color:var(--text); }
+  #cardPanel .segmented button, #momPanel .segmented button, .ew-page .segmented button{ color:var(--text-soft); }
+  #cardPanel .segmented button.active, .ew-page .segmented button.active{ color:var(--text); }
+  /* 第二页的小功能（10-22）：Stats / Tarot / Doodle 都是 ew-page */
+  .ew-page{ z-index:270; }
+  .ew-page .cv-body{ padding-bottom:calc(28px + env(safe-area-inset-bottom)); }
+  .ew-tabs{ padding:12px 16px 6px; }
+  .ew-pad{ padding:8px 16px 0; }
+  .ew-sec{ padding-left:4px; padding-right:4px; }
+  .ew-page .lb-stat{ background:rgba(255,255,255,.6); }
+  .ew-bars{ display:flex; align-items:flex-end; gap:4px; height:150px; padding:8px 2px 0; }
+  .ew-bar{ flex:1; min-width:0; height:100%; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; gap:3px; position:relative; }
+  .ew-bar i{ display:block; width:100%; max-width:16px; min-height:2px; border-radius:5px 5px 2px 2px; background:var(--accent); opacity:.75; }
+  .ew-bar b{ order:-1; font-size:10px; font-weight:500; color:var(--text-faint); min-height:13px; }
+  .ew-bar span{ font-size:9.5px; color:var(--text-faint); white-space:nowrap; transform:scale(.9); }
+  .ew-who{ margin:6px 16px 0; }
+  .ew-cloud{ display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:4px 12px; padding:22px 18px; margin:12px 16px; border-radius:20px; background:rgba(255,255,255,.6); line-height:1.25; }
+  .ew-cloud span{ color:var(--text); word-break:keep-all; }
+  .ew-cloud span:nth-child(3n+1){ color:#4a5a70; } .ew-cloud span:nth-child(3n+2){ color:#a0606e; } .ew-cloud span:nth-child(3n){ color:#5d7f6a; }
+  .ew-cloud-list{ margin:0 16px; }
+  .ew-cloud-list div{ display:flex; gap:12px; align-items:baseline; padding:9px 4px; border-bottom:1px solid var(--hairline); font-size:15px; }
+  .ew-cloud-list span{ width:20px; color:var(--text-faint); font-size:13px; }
+  .ew-cloud-list b{ flex:1; font-weight:500; }
+  .ew-cloud-list em{ font-style:normal; font-size:13px; color:var(--text-faint); }
+  .ew-fav{ margin:10px 16px 0; padding:12px 14px; border-radius:16px; background:rgba(255,255,255,.66); }
+  .ew-fav-top{ display:flex; align-items:center; gap:10px; font-size:13px; color:var(--text-faint); }
+  .ew-fav-top b{ font-weight:600; color:var(--text-soft); }
+  .ew-fav-top span{ flex:1; }
+  .ew-fav-top .x{ border:0; background:none; color:var(--text-faint); font-size:18px; line-height:1; padding:0 2px; }
+  .ew-fav-text{ margin-top:6px; font-size:15.5px; line-height:1.65; white-space:pre-wrap; word-break:break-word; }
+  .ew-fav img{ display:block; margin-top:8px; max-width:140px; max-height:140px; border-radius:10px; }
+  /* 塔罗 */
+  .tr-q{ width:100%; resize:none; padding:10px 12px; border:1px solid var(--hairline); border-radius:12px; background:rgba(255,255,255,.6); color:var(--text); font:inherit; font-size:16px; }
+  .tr-btns{ display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+  .tr-row{ display:flex; justify-content:center; gap:10px; margin-top:6px; }
+  .tr-card{ flex:0 1 200px; min-width:0; display:flex; flex-direction:column; align-items:center; gap:10px; animation:trIn .5s cubic-bezier(.2,.8,.2,1) both; }
+  .tr-row.three .tr-card{ flex:1 1 0; }
+  @keyframes trIn{ from{ opacity:0; transform:translateY(14px) rotateY(70deg); } to{ opacity:1; transform:none; } }
+  .tr-pos{ font-style:normal; font-size:12.5px; letter-spacing:.2em; color:var(--text-faint); }
+  .tr-face{ width:100%; aspect-ratio:3/5; max-width:200px; border-radius:14px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:10px;
+    background:linear-gradient(160deg, #fbf7ef, #efe6d6); border:1px solid rgba(160,130,80,.35); box-shadow:inset 0 0 0 5px rgba(255,255,255,.55), 0 10px 24px -12px rgba(60,50,30,.45); color:#5b4a32; }
+  .tr-card.major .tr-face{ background:linear-gradient(160deg, #f4f1fb, #e3dcf2); border-color:rgba(110,90,160,.35); color:#4b3f6b; }
+  .tr-no{ font-family:var(--font-en), serif; font-size:15px; letter-spacing:.12em; opacity:.75; }
+  .tr-face b{ font-size:19px; font-weight:600; letter-spacing:.08em; text-align:center; }
+  .tr-row.three .tr-face b{ font-size:15px; }
+  .tr-card.rev .tr-face > *{ transform:rotate(180deg); }
+  .tr-mean{ font-size:14px; line-height:1.6; text-align:center; color:var(--text); }
+  .tr-mean span{ display:block; font-size:12px; color:var(--text-faint); margin-bottom:2px; }
+  .tr-row.three .tr-mean{ font-size:13px; }
+  .tr-say{ margin-top:16px; padding:12px 14px; border-radius:16px; background:rgba(255,255,255,.66); font-size:15px; line-height:1.65; }
+  .tr-say b{ display:block; font-size:12.5px; font-weight:500; color:var(--text-faint); margin-bottom:2px; }
+  .tr-date{ margin:4px 4px 12px; font-size:14px; color:var(--text-soft); }
+  .tr-luck{ margin:0; }
+  .tr-stars{ color:#d4a24c; letter-spacing:2px; }
+  .tr-luck b{ font-weight:500; text-align:right; }
+  /* 涂鸦本 */
+  .dd-wrap{ display:flex; flex-direction:column; align-items:center; }
+  .dd-wrap .ew-sec{ align-self:stretch; }
+  .ew-page .cl-btn.dd-go{ background:var(--text); color:var(--bg); border-color:transparent; }
+  .dd-canvas{ display:block; border-radius:16px; background:#fff; box-shadow:0 8px 24px -14px rgba(30,40,55,.4); touch-action:none; }
+  .dd-tools{ width:100%; max-width:520px; display:flex; flex-direction:column; gap:10px; margin-top:12px; }
+  .dd-colors{ display:flex; justify-content:space-between; gap:6px; }
+  .dd-colors button{ width:30px; height:30px; border-radius:50%; border:1px solid rgba(0,0,0,.12); padding:0; }
+  .dd-colors button.on{ box-shadow:0 0 0 2px #fff, 0 0 0 4px var(--text); }
+  .dd-row{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+  .dd-size{ width:38px; height:36px; border-radius:10px; border:1px solid var(--hairline); background:rgba(255,255,255,.6); display:grid; place-items:center; padding:0; }
+  .dd-size i{ display:block; border-radius:50%; background:var(--text); }
+  .dd-size.on, .ew-page .cl-btn.on{ background:var(--text); border-color:transparent; color:var(--bg); }
+  .dd-size.on i{ background:var(--bg); }
+  .dd-book{ width:100%; display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; }
+  .dd-book .cl-empty{ grid-column:1 / -1; }
+  .dd-page{ position:relative; aspect-ratio:1/1.05; border-radius:12px; background:#fff center/cover no-repeat; box-shadow:0 4px 14px -8px rgba(30,40,55,.4); }
+  .dd-page button{ position:absolute; top:-7px; right:-7px; width:22px; height:22px; border-radius:50%; border:0; background:rgba(0,0,0,.55); color:#fff; font-size:14px; line-height:1; padding:0; }
   .cv-head{ display:flex; align-items:center; gap:10px; padding:calc(env(safe-area-inset-top) + 10px) 14px 10px; border-bottom:1px solid var(--hairline); }
   .cv-head .sp-back{ display:grid; }
   .cv-title{ flex:1; text-align:center; font-size:17px; color:var(--text); margin-right:34px; }
@@ -2308,6 +2380,9 @@
   }
   .call-type-send:active{ transform: scale(.92); }
   .call-type-send svg{ width: 20px; height: 20px; display: block; }
+  /* Elsewhere 假通话：没有麦克风和声音，只留挂断和打字框 */
+  .call-overlay.fake :is(.call-controls, .call-transcript-label){ display:none; }
+  .call-overlay.fake .call-transcript-bar:empty{ visibility:hidden; }
   .call-ctrl-btn{
     display: flex; flex-direction: column; align-items: center; gap: 9px;
     border: 0; padding: 0; cursor: pointer;
@@ -3065,6 +3140,12 @@
   .home-tile span{ font-size: 12px; color: var(--text-faint); }
   .home-tile .dot{ position: absolute; top: 12px; right: 12px; width: 9px; height: 9px; border-radius: 50%; background: #d88c95; }
   .home-tile:active, .home-quote:active{ transform: scale(.985); }
+  .home-daily{ display: flex; flex-direction: column; gap: 10px; padding: 16px 18px 18px; border-radius: 22px; text-align: left; font: inherit; color: var(--text); cursor: pointer; }
+  .home-daily:active{ transform: scale(.985); }
+  .hd-top{ display: flex; justify-content: space-between; align-items: baseline; }
+  .hd-top b{ font-size: 13px; font-weight: 500; letter-spacing: .14em; color: var(--text-soft); }
+  .hd-top em{ font-style: normal; font-family: var(--font-en), var(--font-cn); font-size: 13px; color: var(--text-faint); }
+  .hd-text{ font-size: 16.5px; line-height: 1.7; white-space: pre-wrap; word-break: break-word; }
   .home-dots{
     position: absolute; z-index: 2; left: 0; right: 0; display: flex; justify-content: center; gap: 7px;
     bottom: calc(var(--tabbar-h) + 22px + env(safe-area-inset-bottom));
@@ -3205,7 +3286,7 @@
       <button class="topbtn terminal" id="terminalBtn" type="button" aria-label="终端视图" title="终端视图">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m6 8 4 4-4 4"/><path d="M12 16h6"/></svg>
       </button>
-      <button class="topbtn call" id="callBtn" type="button" aria-label="语音通话（占位）" title="语音通话">
+      <button class="topbtn call" id="callBtn" type="button" aria-label="语音通话" title="语音通话">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v2.4a2 2 0 0 1-2.2 2 19.4 19.4 0 0 1-8.4-3 19 19 0 0 1-5.9-5.9 19.4 19.4 0 0 1-3-8.4A2 2 0 0 1 4.5 2h2.4a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.6a2 2 0 0 1-.5 2.1L8 9.4a15.6 15.6 0 0 0 6.6 6.6l1-1a2 2 0 0 1 2.1-.5c.8.3 1.7.5 2.6.6a2 2 0 0 1 1.7 1.8z"/></svg>
       </button>
       <button class="topbtn more" id="moreBtn" type="button" aria-label="个人信息" title="个人信息">
@@ -3293,6 +3374,15 @@
       <span class="plus-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>
       <span class="plus-name">文件</span>
     </button>
+    <button type="button" class="plus-item" data-plus="doodle">
+      <span class="plus-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10z"/><path d="M13.5 7.5l3 3"/></svg></span>
+      <span class="plus-name">涂鸦</span>
+    </button>
+    <!-- 10-22 戳一戳四个动作（照 Sean 那个站） -->
+    <button type="button" class="plus-item" data-plus="poke"><span class="plus-ic plus-emo">👉</span><span class="plus-name">戳一戳</span></button>
+    <button type="button" class="plus-item" data-plus="pinch"><span class="plus-ic plus-emo">🤏</span><span class="plus-name">捏一捏</span></button>
+    <button type="button" class="plus-item" data-plus="kiss"><span class="plus-ic plus-emo">😚</span><span class="plus-name">亲亲</span></button>
+    <button type="button" class="plus-item" data-plus="hug"><span class="plus-ic plus-emo">🫂</span><span class="plus-name">抱抱</span></button>
   </div>
   <!-- 发语音：录一段 → 哈基米听 → 小克读（10-13） -->
   <div class="voice-sheet" id="recSheet" hidden>
@@ -3600,6 +3690,11 @@
       </section>
       <!-- 第二页：Elsewhere 的小功能（10-21 她挑的，一样样做） -->
       <section class="home-pg home-pg2">
+        <!-- 今日情话（10-22）：TA 每天一句，一天不换；点一下收藏 -->
+        <button class="glass home-daily" id="homeDaily" type="button" data-tune="t-daily" data-glass>
+          <span class="hd-top"><b>今日情话</b><em id="homeDailyDate"></em></span>
+          <span class="hd-text" id="homeDailyText">……</span>
+        </button>
         <div class="home-grid bottom" data-space="grid2">
           <button class="glass home-tile wide" type="button" data-menu="moments" data-tune="t-moments" data-glass><b>Moments</b><span>朋友圈</span><i class="dot hidden" id="momDot"></i></button>
           <button class="glass home-tile" type="button" data-menu="tarot" data-tune="t-tarot" data-glass><b>Tarot</b><span>塔罗 · 雷诺曼 · 运势</span></button>
@@ -3823,6 +3918,10 @@
       <button class="msg-act" type="button" data-act="quote" role="menuitem">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 6 6v5"/></svg>
         <span>引用</span>
+      </button>
+      <button class="msg-act" type="button" data-act="fav" role="menuitem">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.8.8-4.2 4.1 1 5.8L12 16.8l-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z"/></svg>
+        <span>收藏</span>
       </button>
       <button class="msg-act danger" type="button" data-act="recall" role="menuitem">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
@@ -4212,7 +4311,10 @@ if (menuPanel){
     else if (item.dataset.menu === "cards") CardLib.open();                  // 字卡库
     else if (item.dataset.menu === "letter") openLetters();                  // 写信 · 收信
     else if (item.dataset.menu === "moments") Moments.open();                // 朋友圈
-    else showToast("还在做哦，马上就来");
+    else if (item.dataset.menu === "stats") Stats.open();                    // 统计 · 词云 · 收藏
+    else if (item.dataset.menu === "tarot") Tarot.open();                    // 塔罗 · 雷诺曼 · 运势
+    else if (item.dataset.menu === "doodle") Doodle.open();                  // 涂鸦本
+    else if (item.dataset.menu === "call"){ closeMenu(); openConv(LEGACY_SESSION_ID); setTimeout(() => window.VoiceCall && window.VoiceCall.dial(), 420); }   // 进聊天直接打过去
   });
 }
 
@@ -4290,6 +4392,19 @@ var CardLib = (function(){
       <div class="cl-sec">一起听设置</div>
       <div class="glass cl-set">
         <div class="r"><span>一首放完，TA 来选下一首（%）</span><span class="nums">${num("musTaPickPct", 0, 100)}</span></div>
+      </div>
+      <div class="cl-sec">通话设置</div>
+      <div class="glass cl-set">
+        <div class="r"><span>你打过去，TA 不接（%）</span><span class="nums">${num("callMissPct", 0, 100)}</span></div>
+        <div class="r"><span>TA 打过来（%）<br><small>每 15~60 分钟掷一次</small></span><span class="nums">${num("callPct", 0, 100)}</span></div>
+      </div>
+      <div class="cl-sec">戳一戳设置</div>
+      <div class="glass cl-set">
+        <div class="r"><span>你戳 TA，TA 回你（%）</span><span class="nums">${num("pokeBackPct", 0, 100)}</span></div>
+      </div>
+      <div class="cl-sec">通知</div>
+      <div class="glass cl-set">
+        <div class="r"><span>切到别的 App 时，TA 来消息弹通知</span><button type="button" class="cl-on${EwNotify.on() ? " on" : ""}" id="clNotify">${EwNotify.on() ? "开" : "关"}</button></div>
       </div>
       <div class="cl-foot">
         <button type="button" class="cl-btn" id="clExport">导出字卡</button>
@@ -4369,6 +4484,11 @@ var CardLib = (function(){
       const c = EwCards.addCat(name, newUse); paintCat(c.id); return;
     }
     if (t.closest("#clPro")){ const c = replyCfg(); c.proactive = !c.proactive; saveReplyCfg(c); paintHome(); return; }
+    if (t.closest("#clNotify")){
+      if (EwNotify.on()){ EwNotify.disable(); paintHome(); }
+      else EwNotify.enable().then(ok => { if (ok) showToast("开好了"); paintHome(); });
+      return;
+    }
     if (t.closest("#clExport")){ exportCards(); return; }
     if (t.closest("#clImport")){ importCards(); return; }
     const row = t.closest("[data-cat]");
@@ -4799,9 +4919,11 @@ const BACKUP_SKIP = /^companion_(secret|push|deleted_ids)|cache|history/i;   // 
     await EwMoments.ready;
     const moments = EwMoments.all();   // 朋友圈也是
     const stickers = await EwStickers.load();   // 她导入的表情包（缩小过，不大）
+    await Doodle.ready;
+    const doodles = Doodle.all();   // 涂鸦本（收藏在 localStorage ew_favs，上面 data 里已经带了）
     const d = new Date(), pad = (n) => String(n).padStart(2, "0");
     const name = `Elsewhere-备份-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}.json`;
-    const blob = new Blob([JSON.stringify({ app: "elsewhere", v: 1, at: d.toISOString(), data, presets, msgs, letters, moments, stickers })], { type: "application/json" });
+    const blob = new Blob([JSON.stringify({ app: "elsewhere", v: 1, at: d.toISOString(), data, presets, msgs, letters, moments, stickers, doodles })], { type: "application/json" });
     const f = new File([blob], name, { type: "application/json" });
     try{
       // iPhone 上弹出分享面板，选「存储到文件」就存进手机了
@@ -4834,6 +4956,7 @@ const BACKUP_SKIP = /^companion_(secret|push|deleted_ids)|cache|history/i;   // 
     if (Array.isArray(obj.letters)){ try{ await EwLetters.replaceAll(obj.letters); }catch(_){} }
     if (Array.isArray(obj.moments)){ try{ await EwMoments.replaceAll(obj.moments); }catch(_){} }
     if (Array.isArray(obj.stickers)){ try{ await EwStore.set("stickers", obj.stickers); }catch(_){} }
+    if (Array.isArray(obj.doodles)){ try{ await Doodle.replaceAll(obj.doodles); }catch(_){} }
     if (Array.isArray(obj.presets)){
       for (let i = 0; i < PRESET_N; i++){
         const p = obj.presets[i];
@@ -5537,6 +5660,8 @@ async function presetSave(i, name){
   const callTypeRow   = $("#callTypeRow");
   const callTypeInput = $("#callTypeInput");
 
+  const FAKE = USE_MOCK;   // Elsewhere：没有服务器，通话是假的（见下面「假通话」）
+  if (FAKE){ overlay.classList.add("fake"); const ci = $("#callTypeInput"); if (ci) ci.placeholder = "打字跟 TA 说"; }
   const VU_BARS = 16;   // 每侧声纹竖条数
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
@@ -5633,6 +5758,7 @@ async function presetSave(i, name){
   }
   function peerTyping(active){
     if (!open || speakBusy) return;        // 已经在说了就不退回"在想"
+    if (FAKE){ if (active && connected) setCaption("thinking"); return; }   // 假通话：上一句留着，不换提示字
     if (active){
       setCaption("thinking");
       setQuote(HINT_THINKING, { hint: true, dots: true });   // 「我在想 …」← 收到=已送达的贴心回执
@@ -5675,6 +5801,7 @@ async function presetSave(i, name){
   }
 
   async function acceptIncomingCall(){
+    if (FAKE){ clearTimeout(incomingTimer); await openCall({ incoming: true }); return; }
     const firstLine = pendingIncomingText;
     hideIncomingCall();
     await openCall();
@@ -5824,6 +5951,7 @@ async function presetSave(i, name){
     if (!text || !open) return;
     callTypeInput.value = "";
     setTranscript("你: " + text, false);
+    if (FAKE){ if (connected){ lastLineAt = Date.now(); Mock.send(text); } return; }   // 假通话：就是在聊天里说一句，TA 照常抽字卡回
     sendVoiceText("（打的字）" + text, "typed");   // 服务器会加 🎤，小克看到「🎤 （打的字）…」就知道是通话里打的
   }
 
@@ -5963,12 +6091,14 @@ async function presetSave(i, name){
     overlay.classList.remove("minimized");
   }
 
-  async function openCall(){
+  async function openCall(opts = {}){
     if (open) return;
     open = true;
     hideIncomingCall();
-    setAudioSession("auto");                            // 通话要开麦，别停在气泡设的 playback
-    ensureTtsCtx();
+    if (!FAKE){
+      setAudioSession("auto");                          // 通话要开麦，别停在气泡设的 playback
+      ensureTtsCtx();
+    }
     callId = "call-" + Date.now().toString(36);
     buildVu();
     clearTimeout(hideId);
@@ -5990,14 +6120,110 @@ async function presetSave(i, name){
     if (callTypeInput) callTypeInput.value = "";
     if (callPrivateBtn) callPrivateBtn.classList.remove("active");
     setQuote(HINT_LISTENING, { hint: true });
-    if (miniTimer) miniTimer.textContent = fmt(secs);
-    clearInterval(tickId);
-    tickId = setInterval(() => { secs++; const t = fmt(secs); timerEl.textContent = t; if (miniTimer) miniTimer.textContent = t; }, 1000);
+    if (FAKE){ fakeStart(opts); return; }
+    startTick();
     apiCallEvent("start", { call_id: callId }).catch(() => {});
     await startVoiceInput();
   }
-  function closeCall(){
+  function startTick(){
+    secs = 0; timerEl.textContent = fmt(secs);
+    if (miniTimer) miniTimer.textContent = fmt(secs);
+    clearInterval(tickId);
+    tickId = setInterval(() => { secs++; const t = fmt(secs); timerEl.textContent = t; if (miniTimer) miniTimer.textContent = t; }, 1000);
+  }
+
+  /* ── Elsewhere 假通话（10-22）：没有声音也不开麦。TA 的话从「通话」字卡抽（空就用聊天回复的），显示在引号里、也进聊天记录；她打字说。
+     照传讯（milk 的 call.js）：她打过去 callMissPct（默认 35）不接——一半是 4~12 秒「未接听/在忙/拒绝」，一半响满 30 秒「无人接听」；
+     接的话 1.4~2.8 秒连上。TA 每隔 15~60 分钟有 callPct（默认 3）的机会打过来，只在网页开着时弹，不响铃，30 秒没接就挂。
+     她要的：两边都能打、都能挂；打来 / 挂断 / 没接 都在聊天里留一行灰字 */
+  let fakeTimer = null, taHangTimer = null, chatterTimer = null, ringTimer = null, incomingTimer = null;
+  let connected = false, lastLineAt = 0;
+  const taCallName = () => (typeof taName === "function" ? taName() : AI_NAME);
+  const note = (t) => { if (FAKE && typeof Mock !== "undefined") Mock.notice(t); };
+  const pickOne = (a) => a[Math.floor(Math.random() * a.length)];
+  const callLine = () => EwCards.pick("call") || EwCards.pickReply();
+  function fakeStart(opts){
+    connected = false;
+    typing = true;
+    if (callTypeRow) callTypeRow.classList.add("hidden");
+    if (transcript) transcript.textContent = "";   // 空着就不显示那条（CSS :empty）
+    if (opts.incoming){ connect(true); return; }
+    setCaption("calling");
+    timerEl.textContent = "呼叫中";
+    setQuote("等 " + taCallName() + " 接", { hint: true, dots: true });
+    const c = replyCfg();
+    if (Math.random() * 100 < c.callMissPct){
+      if (Math.random() < 0.5){
+        const t = taCallName();
+        fakeTimer = setTimeout(() => closeCall({ miss: pickOne([`${t} 未接听`, `${t} 正在忙，无法接听`, `${t} 拒绝了通话`, `${t} 暂时无法接听`]) }), 4000 + Math.random() * 8000);
+      } else fakeTimer = setTimeout(() => closeCall({ miss: `${taCallName()} 无人接听` }), 30000);
+    } else fakeTimer = setTimeout(() => connect(false), 1400 + Math.random() * 1400);
+  }
+  function connect(incoming){
+    connected = true;
+    startTick();
+    setCaption("on call");
+    setQuote("", { hint: true });
+    if (callTypeRow) callTypeRow.classList.remove("hidden");
+    lastLineAt = Date.now();
+    // TA 先开口（她打过去的话等她先说一句的机会大一点）
+    if (incoming || Math.random() < 0.5) setTimeout(() => { if (open && connected) taSay(); }, incoming ? 900 : 2200);
+    armChatter();
+    clearTimeout(taHangTimer);   // TA 也会挂：聊了 3~20 分钟
+    taHangTimer = setTimeout(() => closeCall({ by: "ta" }), (3 + Math.random() * 17) * 60e3);
+  }
+  function taSay(){
+    const t = callLine();
+    if (t) Mock.say(t, { call: 1 });
+  }
+  // 她一阵没说话，TA 自己找话说（20 秒没人说话才开口）
+  function armChatter(){
+    clearTimeout(chatterTimer);
+    chatterTimer = setTimeout(() => {
+      if (!open || !connected) return;
+      if (!speakBusy && Date.now() - lastLineAt > 20000) taSay();
+      armChatter();
+    }, 25000 + Math.random() * 35000);
+  }
+  function stopFake(){
+    [fakeTimer, taHangTimer, chatterTimer].forEach(clearTimeout);
+    fakeTimer = taHangTimer = chatterTimer = null;
+  }
+  // TA 打过来：每 15~60 分钟掷一次（照 milk 的间隔），8 点前不打；网页没开着就不打
+  function armRing(){
+    clearTimeout(ringTimer);
+    ringTimer = setTimeout(() => {
+      const c = replyCfg();
+      if (!open && !incomingOpen && document.visibilityState === "visible" && new Date().getHours() >= 8 && Math.random() * 100 < c.callPct) ringIn();
+      armRing();
+    }, (15 + Math.random() * 45) * 60e3);
+  }
+  function ringIn(){
+    if (open || incomingOpen) return;
+    note(`${taCallName()} 打来了语音通话`);
+    const tt = document.querySelector(".incoming-call-title"); if (tt) tt.textContent = taCallName() + " 来电";
+    showIncomingCall(`${taCallName()} 想和你语音通话`);
+    clearTimeout(incomingTimer);
+    incomingTimer = setTimeout(() => { if (incomingOpen){ hideIncomingCall(); note("无人接听，已挂断"); } }, 30000);
+  }
+  function declineIncoming(){
+    if (!incomingOpen) return;
+    clearTimeout(incomingTimer);
+    hideIncomingCall();
+    note("你拒绝了通话");
+  }
+  if (FAKE) armRing();
+
+  function closeCall(why = {}){
     if (!open) return;
+    if (FAKE){
+      const was = connected, t = fmt(secs);
+      stopFake(); connected = false;
+      if (why.miss) note(why.miss);
+      else if (!was) note("已取消");
+      else note((why.by === "ta" ? `${taCallName()} 挂断了通话` : "你挂断了通话") + ` · 通话时长 ${t}`);
+      if (why.miss || why.by === "ta") showToast(why.miss || `${taCallName()} 挂断了`, 2200);
+    }
     const closingCallId = callId;
     open = false;
     minimized = false;
@@ -6023,7 +6249,7 @@ async function presetSave(i, name){
     speakQueue.length = 0;
     speakBusy = false;
     if (ttsCtx){ try{ ttsCtx.close(); }catch(e){} ttsCtx = null; }
-    apiCallEvent("end", { call_id: closingCallId }).catch(() => {});
+    if (!FAKE) apiCallEvent("end", { call_id: closingCallId }).catch(() => {});
     clearTimeout(hideId);
     hideId = setTimeout(() => overlay.classList.add("hidden"), 380);
   }
@@ -6035,7 +6261,8 @@ async function presetSave(i, name){
   function speak(item){
     if (!open || !item) return;
     const it = (typeof item === "string") ? { say: sayClean(item), lang: "zh", show: item } : item;
-    if (!it.say) return;
+    if (FAKE){ if (!connected || !it.show) return; lastLineAt = Date.now(); }   // 假通话不念，只显示；没接通前 TA 的消息不算
+    else if (!it.say) return;
     speakQueue.push(it);
     if (!speakBusy) drainSpeakQueue();
   }
@@ -6055,6 +6282,7 @@ async function presetSave(i, name){
       }
     }
     speakBusy = false;
+    if (open && FAKE){ setCaption("on call"); return; }   // 假通话：TA 那句留在引号里，不换成「我在听」
     if (open && !mediaRecorder){
       setCaption("listening");
       setQuote(HINT_LISTENING, { hint: true });
@@ -6063,6 +6291,13 @@ async function presetSave(i, name){
   }
 
   async function speakOne(item){
+    if (FAKE){   // 没有声音：声纹跳一会儿（按字数），当 TA 在说
+      const ms = Math.min(6000, 900 + item.show.length * 160);
+      const vuTick = setInterval(() => setWaveLevel(0.45 + Math.random() * 0.5), 140);
+      await new Promise(r => setTimeout(r, ms));
+      clearInterval(vuTick); setWaveLevel(0);
+      return;
+    }
     try{
       console.log("[speak] fetching TTS…", item.lang);
       const blob = await apiTts(item.say, item.lang, item.voice);
@@ -6119,7 +6354,8 @@ async function presetSave(i, name){
     showIncomingCall(text);
   }
 
-  window.VoiceCall = { speak, incoming, peerTyping, close: closeCall, minimize: minimizeCall, expand: expandCall, isOpen: () => open, isMinimized: () => minimized };
+  window.VoiceCall = { speak, incoming, peerTyping, close: closeCall, minimize: minimizeCall, expand: expandCall, isOpen: () => open, isMinimized: () => minimized,
+    dial: () => { if (!open) void openCall(); }, ringIn };
 
   if (minimizeBtn) minimizeBtn.addEventListener("click", (e) => { e.stopPropagation(); minimizeCall(); });
   if (miniBar) miniBar.addEventListener("click", expandCall);
@@ -6139,14 +6375,15 @@ async function presetSave(i, name){
     callSpeakerBtn.classList.toggle("active");
   });
   callBtn.addEventListener("click", () => { open ? closeCall() : void openCall(); });
-  hangup.addEventListener("click", closeCall);
+  hangup.addEventListener("click", () => closeCall());
+  const decline = FAKE ? declineIncoming : hideIncomingCall;
   if (incomingAccept) incomingAccept.addEventListener("click", () => { void acceptIncomingCall(); });
-  if (incomingDecline) incomingDecline.addEventListener("click", hideIncomingCall);
-  if (incomingScrim) incomingScrim.addEventListener("click", hideIncomingCall);
+  if (incomingDecline) incomingDecline.addEventListener("click", decline);
+  if (incomingScrim) incomingScrim.addEventListener("click", decline);
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
     if (open) closeCall();
-    else if (incomingOpen) hideIncomingCall();
+    else if (incomingOpen) decline();
   });
 })();
 
@@ -6640,7 +6877,14 @@ const EwStore = (() => {
 
 const EwCards = (() => {
   const KEY = "ew_cards";
-  const USES = { reply:"聊天回复", proactive:"TA 主动找你", letter:"回信", moment:"朋友圈", music:"一起听" };
+  const USES = { reply:"聊天回复", proactive:"TA 主动找你", letter:"回信", moment:"朋友圈", music:"一起听", call:"通话", daily:"今日情话", poke:"戳一戳", tarot:"塔罗" };
+  // v6（10-22）：通话里说的话 / 每天一句的今日情话 / 戳了 TA 以后 TA 回的话 / 抽完牌 TA 说的话
+  const V6_CATS = [
+    { id:"call",  name:"通话",     use:"call",  on:true },
+    { id:"dailyq",name:"今日情话", use:"daily", on:true },
+    { id:"poke",  name:"戳一戳",   use:"poke",  on:true },
+    { id:"tarot", name:"塔罗",     use:"tarot", on:true },
+  ];
   const useLabel = (c) => USES[c.use] || "";
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   // v2（10-21）：多了回信，旧字卡库补上这个空分类（只补一次，删了不会再冒出来）
@@ -6648,9 +6892,10 @@ const EwCards = (() => {
     { id:"letter", name:"回信", use:"letter", on:true },
   ];
   function defaults(){
-    return { v:5, cats:[
+    return { v:6, cats:[
       { id:"moment", name:"朋友圈", use:"moment", on:true },
       { id:"music",  name:"一起听", use:"music",  on:true },
+      ...V6_CATS.map(c => ({ ...c })),
       { id:"daily",  name:"日常",       use:"reply",     on:true },
       { id:"sweet",  name:"情话",       use:"reply",     on:true },
       { id:"comfort",name:"安慰",       use:"reply",     on:true },
@@ -6688,6 +6933,10 @@ const EwCards = (() => {
     if (!(data.v >= 5)){
       if (!data.cats.some(c => c.use === "music")) data.cats.push({ id:"music", name:"一起听", use:"music", on:true });
       data.v = 5; save();
+    }
+    if (!(data.v >= 6)){
+      V6_CATS.forEach(c => { if (!data.cats.some(x => x.use === c.use)) data.cats.push({ ...c }); });
+      data.v = 6; save();
     }
   }
   function save(){ try{ localStorage.setItem(KEY, JSON.stringify(data)); }catch(_){ showToast("存不下了，手机空间不够"); } }
@@ -6777,6 +7026,9 @@ const REPLY_DEFAULT = {
   momReplyPct: 60,              // 她评论了，TA 回她的机会（%）
   momReactMinMin: 1, momReactMaxMin: 120,  // TA 过多久来（分钟）
   musTaPickPct: 30,             // 一起听：一首放完，TA 来选下一首的机会（%）
+  callMissPct: 35,              // 她打过去 TA 不接的机会（%，照传讯 milk 的 0.35）
+  callPct: 3,                   // 每隔 15~60 分钟，TA 打过来的机会（%，她记得的 3%）
+  pokeBackPct: 60,              // 她戳一戳，TA 回一下的机会（%）
   stickerPct: 15,               // TA 回话时发一张表情包的机会（%，从她导入的里挑）
   letterMinN: 2, letterMaxN: 4  // 一封回信几段
 };
@@ -6805,7 +7057,13 @@ const Mock = (() => {
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => EwStore.set("msgs", messages), 300);
   }
-  function emit(m){ subs.forEach(s => s._deliver(m)); }
+  function emit(m){
+    subs.forEach(s => s._deliver(m));
+    if (m.from === "ai"){   // 切到别的 App 时弹通知（EwNotify 里会看开没开、页面是不是在后台）
+      const atts = (m.meta && m.meta.attachments) || [];
+      try{ EwNotify.show(taName(), m.text || (atts.some(a => a.sticker) ? "[表情包]" : "[图片]")); }catch(_){}
+    }
+  }
   function emitEvent(ev){ subs.forEach(s => s._deliver(ev)); }
   function push(from, text, meta = {}, ts = Date.now()){
     const m = { id: nextId++, ts: new Date(ts).toISOString(), from, kind: from === "ai" ? "reply" : "user", text, meta };
@@ -6877,7 +7135,10 @@ const Mock = (() => {
       const c = replyCfg(), h = new Date().getHours();
       if (c.proactive && h >= 8 && Date.now() - lastAt() > c.proMinMin * 60e3){
         const text = EwCards.pick("proactive");
-        if (text){ emit(push("ai", text, { proactive:1 })); try{ localStorage.setItem("ew_pro_last", String(Date.now())); }catch(_){} }
+        if (text){
+          if (Math.random() < 0.15) EwPoke.taDoes();   // 偶尔先戳你一下再说话
+          emit(push("ai", text, { proactive:1 })); try{ localStorage.setItem("ew_pro_last", String(Date.now())); }catch(_){}
+        }
       }
       armProactive();
     }, nextGapMs());
@@ -6913,6 +7174,11 @@ const Mock = (() => {
       return { id: m.id };
     },
     say(text, meta = {}){ const m = push("ai", text, meta); emit(m); return m; },   // 别的功能让 TA 说一句（一起听：TA 选了歌）
+    // 聊天中间一行灰字（通话、戳一戳、换背景）：不是谁说的话，不响、TA 也不回
+    notice(text){
+      const m = { id: nextId++, ts: new Date().toISOString(), from: "system", kind: "notice", text, meta: {} };
+      messages.push(m); persist(); emit(m); return m;
+    },
     recall(id){ const m = messages.find(x => String(x.id) === String(id)); if (m){ m.meta = { ...(m.meta || {}), recalled:1 }; persist(); } },
     remove(id){ messages = messages.filter(x => String(x.id) !== String(id)); persist(); },
     react(id, emoji){
@@ -7239,7 +7505,12 @@ function setReplyTo(q){
 
 /* 「你更改了背景/气泡/备注」：存到服务器，聊天里中间出一行字（不发给小克） */
 function apiNotice(what){
-  if (USE_MOCK || !secret) return;
+  if (USE_MOCK){   // Elsewhere：直接在本地记一行（10-22，像 LINK 那样）
+    const t = { wall: "你更改了聊天背景", bubble: "你更改了气泡", remark: "你修改了备注" }[what];
+    if (t) Mock.notice(t);
+    return;
+  }
+  if (!secret) return;
   fetch(`${API_BASE}/app/notice`, {
     method: "POST",
     headers: { ...authHeaders(), "Content-Type": "application/json" },
@@ -9715,6 +9986,483 @@ function refreshMomDot(){
   if (dot) dot.classList.toggle("hidden", !EwMoments.unread());
 }
 
+/* ════════════ Elsewhere 第二页的小功能（10-22 晚上一起做的） ════════════
+   戳一戳 / 收藏 / 今日情话 / Stats（统计·词云·收藏）/ Tarot（塔罗·雷诺曼·今日运势）/ Doodle 涂鸦本 / 后台通知
+   整页的都用 ewPage() 开一页：跟字卡库一样磨砂白底深色字，不跟主题走 */
+const EW_BACK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>';
+function ewPage(id, title){
+  const panel = document.createElement("div");
+  panel.className = "conv-panel ew-page hidden";
+  panel.id = id;
+  panel.innerHTML = `<div class="cv-head"><button type="button" class="sp-back" aria-label="返回">${EW_BACK_SVG}</button><div class="cv-title">${title}</div></div><div class="cv-body"></div>`;
+  document.body.appendChild(panel);
+  let t = null;
+  const p = {
+    panel, body: panel.querySelector(".cv-body"), head: panel.querySelector(".cv-head"), onclose: null,
+    isOpen: () => !panel.classList.contains("hidden"),
+    open(){
+      clearTimeout(t);
+      panel.classList.remove("hidden"); p.body.scrollTop = 0;
+      requestAnimationFrame(() => requestAnimationFrame(() => panel.classList.add("open")));
+    },
+    close(){
+      panel.classList.remove("open");
+      clearTimeout(t); t = setTimeout(() => panel.classList.add("hidden"), 340);
+      if (p.onclose) p.onclose();
+    },
+  };
+  panel.querySelector(".sp-back").addEventListener("click", () => p.close());
+  return p;
+}
+// 一排分类按钮（照信箱那排）
+const ewTabs = (tabs, on) => `<div class="lb-tabs ew-tabs">${tabs.map(([k, v]) => `<button type="button" data-tab="${k}" class="${k === on ? "on" : ""}">${v}</button>`).join("")}</div>`;
+const ewDayKey = (t = Date.now()) => { const d = new Date(t); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
+
+/* ── 戳一戳 · 捏一捏 · 亲亲 · 抱抱（照 Sean 那个站）──
+   她在「＋」里点一个 → 聊天中间一行灰字「你戳了戳 TA」；TA 有 pokeBackPct 的机会过 2~8 秒回：
+   一半回一个动作（多半是同一个），一半从「戳一戳」字卡说一句（空着就回动作）。TA 主动找你时偶尔先戳你一下 */
+const EwPoke = (() => {
+  const ACTS = { poke:"戳了戳", pinch:"捏了捏", kiss:"亲了亲", hug:"抱了抱" };
+  const keys = Object.keys(ACTS);
+  let backTimer = null;
+  function taDoes(k){
+    Mock.notice(`${taName()} ${ACTS[k] || ACTS[keys[Math.floor(Math.random() * keys.length)]]}你`);
+    try{ if (navigator.vibrate && !prefersReducedMotion) navigator.vibrate([18, 70, 18]); }catch(_){}
+  }
+  function doIt(k){
+    Mock.notice(`你${ACTS[k]} ${taName()}`);
+    clearTimeout(backTimer);
+    if (Math.random() * 100 >= replyCfg().pokeBackPct) return;
+    backTimer = setTimeout(() => {
+      const line = Math.random() < 0.5 ? EwCards.pick("poke") : null;
+      if (line) Mock.say(line); else taDoes(Math.random() < 0.6 ? k : null);
+    }, 2000 + Math.random() * 6000);
+  }
+  return { ACTS, doIt, taDoes };
+})();
+
+/* ── 收藏：localStorage ew_favs = [{id, from, ts, text, img}]（img 只留表情包/小图的地址，太大的不存）── */
+const EwFavs = (() => {
+  const KEY = "ew_favs";
+  let list = [];
+  try{ list = JSON.parse(localStorage.getItem(KEY) || "[]") || []; }catch(_){ list = []; }
+  const save = () => { try{ localStorage.setItem(KEY, JSON.stringify(list)); return true; }catch(_){ showToast("存不下了，手机空间不够"); return false; } };
+  function imgOf(m){
+    const a = m && m.meta && Array.isArray(m.meta.attachments) ? m.meta.attachments.find(x => x.kind === "image" && x.url) : null;
+    return a && String(a.url).length < 400000 ? a.url : "";
+  }
+  return {
+    all: () => list,
+    imgOf,
+    has: (id) => list.some(f => f.id === String(id)),
+    add(m){
+      const id = String(m.id);
+      if (list.some(f => f.id === id)) return false;
+      list.unshift({ id, from: m.from === "ai" ? "ta" : (m.from === "daily" ? "daily" : "me"), ts: Date.parse(m.ts) || Date.now(), text: String(m.text || ""), img: imgOf(m) });
+      return save();
+    },
+    remove(id){ list = list.filter(f => f.id !== id); save(); },
+    replaceAll(l){ list = Array.isArray(l) ? l : []; save(); },
+  };
+})();
+
+/* ── 今日情话：每天从「今日情话」字卡抽一句（空就用聊天回复的），一天之内不换。存 ew_daily = {day, text} ── */
+const EwDaily = (() => {
+  const KEY = "ew_daily";
+  function today(){
+    let d = null;
+    try{ d = JSON.parse(localStorage.getItem(KEY) || "null"); }catch(_){}
+    if (d && d.day === ewDayKey() && d.text) return d.text;
+    const text = EwCards.pick("daily") || EwCards.pick("reply");
+    if (!text) return "";
+    try{ localStorage.setItem(KEY, JSON.stringify({ day: ewDayKey(), text })); }catch(_){}
+    return text;
+  }
+  function paint(){
+    const el = document.getElementById("homeDailyText"); if (!el) return;
+    const t = today();
+    el.textContent = t || "……";
+    const d = new Date();
+    const when = document.getElementById("homeDailyDate");
+    if (when) when.textContent = `${d.getMonth() + 1}.${d.getDate()}`;
+  }
+  return { today, paint };
+})();
+(function setupDaily(){
+  const card = document.getElementById("homeDaily");
+  if (!card) return;
+  EwDaily.paint();
+  card.addEventListener("click", () => {
+    if (glassJustTuned) return;
+    const t = EwDaily.today();
+    if (!t){ showToast("「今日情话」字卡还是空的"); return; }
+    showToast(EwFavs.add({ id: "daily-" + ewDayKey(), from: "daily", ts: new Date().toISOString(), text: t }) ? "收藏了今天这句" : "今天这句收藏过了");
+  });
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) EwDaily.paint(); });   // 过了零点回来换新的一句
+})();
+
+/* ── Stats：统计 · 词云 · 收藏 ── */
+var Stats = (function(){
+  const pg = ewPage("statsPanel", "Stats");
+  let tab = "num", who = "all";
+  const STOP = new Set(("的 了 是 我 你 他 她 它 们 在 有 就 不 也 都 和 吗 呢 吧 啊 呀 哦 嗯 这 那 个 一 着 过 还 又 要 会 能 到 说 去 来 对 很 太 好 没 什么 怎么 这个 那个 一个 我们 你们 他们 她们 自己 就是 还是 但是 因为 所以 然后 可以 没有 不是 一下 现在 今天 知道 觉得 已经 时候 这样 那样 这么 那么 一样 一点 有点 还有 如果 而且 或者 只是 真的 其实 可能 应该 为什么 哈哈 哈哈哈 嘿嘿 嗯嗯 好的 好吧 是的 不要 不会 不能 不用 一直 东西 起来 出来 一起 有些 那些 这些 的话 之后 之前 以后 以前 一些 我的 你的 他的 她的").split(" "));
+  const msgs = () => Mock.all().filter(m => (m.from === "human" || m.from === "ai") && m.kind !== "notice" && !(m.meta && m.meta.recalled));
+  const tsOf = (m) => Date.parse(m.ts) || 0;
+  const len = (s) => String(s || "").replace(/\s/g, "").length;
+  const cell = (k, v) => `<div class="lb-stat"><span>${k}</span><b>${v}</b></div>`;
+  function paintNum(){
+    const all = msgs();
+    if (!all.length){ pg.body.insertAdjacentHTML("beforeend", `<div class="cl-empty">还没聊过天</div>`); return; }
+    const me = all.filter(m => m.from === "human"), ta = all.filter(m => m.from === "ai");
+    const days = new Set(all.map(m => ewDayKey(tsOf(m))));
+    const first = all.reduce((a, m) => Math.min(a, tsOf(m) || a), Infinity), fd = new Date(first);
+    // 连着聊最多几天
+    const sortedDays = [...days].map(k => { const [y, mo, d] = k.split("-").map(Number); return new Date(y, mo - 1, d).getTime(); }).sort((a, b) => a - b);
+    let best = 0, run = 0, prev = 0;
+    sortedDays.forEach(t => { run = prev && Math.round((t - prev) / 86400e3) === 1 ? run + 1 : 1; best = Math.max(best, run); prev = t; });
+    // 最爱在几点聊
+    const hours = new Array(24).fill(0); all.forEach(m => hours[new Date(tsOf(m)).getHours()]++);
+    const topH = hours.indexOf(Math.max(...hours));
+    const pics = all.filter(m => m.meta && Array.isArray(m.meta.attachments) && m.meta.attachments.length);
+    const stk = pics.filter(m => m.meta.attachments.some(a => a.sticker)).length;
+    // 最近 14 天每天几条
+    const bars = [];
+    for (let i = 13; i >= 0; i--){
+      const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - i);
+      const k = ewDayKey(d.getTime());
+      bars.push({ label: `${d.getMonth() + 1}/${d.getDate()}`, n: all.filter(m => ewDayKey(tsOf(m)) === k).length });
+    }
+    const max = Math.max(1, ...bars.map(b => b.n));
+    pg.body.insertAdjacentHTML("beforeend", `<div class="ew-pad"><div class="lb-stats">
+        ${cell("一起聊了", days.size + " 天")}${cell("最多连着聊", best + " 天")}
+        ${cell("你说了", me.length + " 条")}${cell(escapeHtml(taName()) + " 说了", ta.length + " 条")}
+        ${cell("你打的字", me.reduce((n, m) => n + len(m.text), 0) + " 字")}${cell(escapeHtml(taName()) + " 的字", ta.reduce((n, m) => n + len(m.text), 0) + " 字")}
+        ${cell("最爱在几点聊", topH + " 点")}${cell("表情包 / 图", stk + " / " + (pics.length - stk))}
+      </div>
+      <div class="cl-sec ew-sec">最近两个星期</div>
+      <div class="ew-bars">${bars.map(b => `<div class="ew-bar"><i style="height:${Math.round(b.n / max * 78)}%"></i><b>${b.n || ""}</b><span>${b.label}</span></div>`).join("")}</div>
+      <div class="lb-first">第一条消息在 ${fd.getFullYear()} 年 ${fd.getMonth() + 1} 月 ${fd.getDate()} 日</div></div>`);
+  }
+  function words(texts){
+    const count = new Map();
+    const add = (w) => {
+      w = w.trim();
+      if (STOP.has(w)) return;
+      if (!(/^\p{Script=Han}{2,6}$/u.test(w) || /^[A-Za-z]{3,}$/.test(w))) return;
+      count.set(w, (count.get(w) || 0) + 1);
+    };
+    let seg = null;
+    try{ seg = new Intl.Segmenter("zh", { granularity: "word" }); }catch(_){}
+    texts.forEach(t => {
+      if (seg){ for (const s of seg.segment(t)) if (s.isWordLike) add(s.segment); }
+      else { const h = t.match(/\p{Script=Han}+/gu) || []; h.forEach(r => { for (let i = 0; i < r.length - 1; i++) add(r.slice(i, i + 2)); }); }   // 不会分词的老手机：两个字两个字地数
+    });
+    return [...count.entries()].filter(([, n]) => n > 1).sort((a, b) => b[1] - a[1]).slice(0, 60);
+  }
+  function paintCloud(){
+    const all = msgs().filter(m => who === "all" || (who === "me" ? m.from === "human" : m.from === "ai"));
+    const ws = words(all.map(m => String(m.text || "")).filter(Boolean));
+    const seg = `<div class="segmented ew-who">${[["all", "全部"], ["me", "我说的"], ["ta", escapeHtml(taName()) + " 说的"]].map(([k, v]) => `<button type="button" data-who="${k}" class="${k === who ? "active" : ""}">${v}</button>`).join("")}</div>`;
+    if (!ws.length){ pg.body.insertAdjacentHTML("beforeend", seg + `<div class="cl-empty">话还太少，多聊几句再来看</div>`); return; }
+    const top = ws[0][1], low = ws[ws.length - 1][1];
+    // 大词放中间：按次数排好后左右交替插
+    const order = []; ws.forEach((w, i) => (i % 2 ? order.push(w) : order.unshift(w)));
+    pg.body.insertAdjacentHTML("beforeend", seg + `<div class="ew-cloud">${order.map(([w, n]) => {
+      const k = top === low ? 0.5 : (n - low) / (top - low);
+      return `<span style="font-size:${Math.round(14 + k * 26)}px;opacity:${(0.55 + k * 0.45).toFixed(2)}" title="${n} 次">${escapeHtml(w)}</span>`;
+    }).join("")}</div>
+      <div class="ew-cloud-list">${ws.slice(0, 10).map(([w, n], i) => `<div><span>${i + 1}</span><b>${escapeHtml(w)}</b><em>${n} 次</em></div>`).join("")}</div>`);
+  }
+  function paintFav(){
+    const l = EwFavs.all();
+    if (!l.length){ pg.body.insertAdjacentHTML("beforeend", `<div class="cl-empty">长按聊天里的一句，点「收藏」</div>`); return; }
+    pg.body.insertAdjacentHTML("beforeend", l.map(f => {
+      const d = new Date(f.ts), who = f.from === "ta" ? taName() : (f.from === "daily" ? "今日情话" : meName());
+      return `<div class="ew-fav" data-fav="${escapeHtml(f.id)}">
+        <div class="ew-fav-top"><b>${escapeHtml(who)}</b><span>${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}</span><button type="button" class="x" data-unfav="${escapeHtml(f.id)}" aria-label="取消收藏">×</button></div>
+        ${f.text ? `<div class="ew-fav-text">${escapeHtml(f.text)}</div>` : ""}${f.img ? `<img src="${escapeHtml(f.img)}" alt="">` : ""}
+      </div>`;
+    }).join(""));
+  }
+  function paint(){
+    pg.body.innerHTML = ewTabs([["num", "统计"], ["cloud", "词云"], ["fav", "收藏"]], tab);
+    if (tab === "num") paintNum(); else if (tab === "cloud") paintCloud(); else paintFav();
+  }
+  pg.body.addEventListener("click", (e) => {
+    const tb = e.target.closest("[data-tab]"); if (tb){ tab = tb.dataset.tab; paint(); return; }
+    const w = e.target.closest("[data-who]"); if (w){ who = w.dataset.who; paint(); return; }
+    const x = e.target.closest("[data-unfav]");
+    if (x && confirm("不收藏这条了？")){ EwFavs.remove(x.dataset.unfav); paint(); }
+  });
+  return { open(t){ tab = t || "num"; paint(); pg.open(); } };
+})();
+
+/* ── Tarot：塔罗（单张 / 三张）· 雷诺曼（单张 / 三张）· 今日运势（按日期定好，一天不变）──
+   牌义是通行的韦特塔罗、雷诺曼的意思，自己写的简短版；抽完牌 TA 从「塔罗」字卡说一句 */
+const TAROT_MAJOR = [
+  ["愚者","新的开始、冒险、自由、天真","鲁莽、犹豫不决、不切实际"],
+  ["魔术师","创造力、行动、手里的资源都够用","能力没发挥出来、计划落空"],
+  ["女祭司","直觉、沉静、听听心里的声音","忽视直觉、心事藏得太深"],
+  ["皇后","丰盛、温柔、被好好照顾","过度付出、依赖、停滞"],
+  ["皇帝","稳定、秩序、责任、掌控","固执、控制欲强、缺少弹性"],
+  ["教皇","传统、学习、有人指引","打破常规、质疑、想自己走"],
+  ["恋人","爱、心意相通、重要的选择","不和、选择两难、想法不一样"],
+  ["战车","意志力、往前冲、胜利","失控、方向不明、急躁"],
+  ["力量","温柔的勇气、耐心、接纳自己","自我怀疑、没底气、情绪失控"],
+  ["隐士","独处、内省、慢慢找答案","孤立、逃避、钻牛角尖"],
+  ["命运之轮","转机、好运、顺势而为","时运不济、抗拒变化"],
+  ["正义","公平、真相、因果","不公平、逃避责任、偏见"],
+  ["倒吊人","换个角度看、等待、放下","停滞、白白牺牲、拖延"],
+  ["死神","结束与新生、告别、转变","抗拒改变、拖着不放"],
+  ["节制","平衡、调和、慢慢来","失衡、过度、急于求成"],
+  ["恶魔","诱惑、执念、被困住","挣脱、看清、重获自由"],
+  ["高塔","突然的变化、打破、真相浮现","躲过一劫、害怕改变"],
+  ["星星","希望、疗愈、平静的信心","失望、信心不足、迷茫"],
+  ["月亮","不安、看不清、潜意识","迷雾散去、恐惧减轻"],
+  ["太阳","快乐、成功、温暖、坦诚","暂时的低落、热情减退"],
+  ["审判","觉醒、重新出发","自我怀疑、不肯面对过去"],
+  ["世界","圆满、完成、旅程抵达","差一点、还没收尾"],
+];
+const TAROT_SUITS = [
+  ["权杖", [
+    ["新的热情、灵感、开始行动","动力不足、延误"],["规划未来、做决定","害怕未知、计划不周"],["远见、扩展、等待成果","受阻、准备不足"],
+    ["庆祝、安定、家的温暖","不稳定、过渡期"],["竞争、争执、摩擦","避免冲突、内耗"],["胜利、被认可、好消息","自我怀疑、失去认可"],
+    ["坚守立场、勇气","疲于应付、退让"],["进展很快、消息到来","延迟、匆忙出错"],["坚持、警惕、最后一段路","疲惫、防备太重"],
+    ["负担太重、扛着责任","放下包袱、学会分担"],["好奇、新消息、探索","三分钟热度"],["冲劲、冒险、热情","冲动、半途而废"],
+    ["自信、温暖、有魅力","嫉妒、不安全感"],["领导力、远见、担当","专断、急躁"]]],
+  ["圣杯", [
+    ["新的感情、爱意涌出来","情感压抑、空落落的"],["两情相悦、默契、连结","失和、关系失衡"],["友谊、欢聚、庆祝","玩过头、小圈子"],
+    ["倦怠、冷淡、忽略身边的好","重新打开心、接受邀请"],["失落、遗憾","走出难过、看见还剩下的"],["回忆、纯真、旧人旧事","沉在过去、该向前看"],
+    ["幻想、选择太多","看清现实、做出选择"],["离开、去找更深的东西","犹豫要不要走、逃避"],["心愿达成、满足","贪心、不满足"],
+    ["家庭幸福、圆满的爱","有裂痕、期待落空"],["温柔的消息、浪漫的心","情绪化、不成熟"],["浪漫、邀约、追求","不切实际、情绪多变"],
+    ["共情、温柔、会照顾人","情绪泛滥、太在意别人"],["情绪稳定、包容","压着情绪、冷淡"]]],
+  ["宝剑", [
+    ["清晰、真相、突破","混乱、判断失误"],["两难、僵持、不想面对","做出决定、信息太多"],["心碎、伤痛","慢慢复原、释怀"],
+    ["休息、恢复、暂停一下","焦躁、该重新出发了"],["冲突、赢了却失去","和解、放下争执"],["过渡、离开困境","走不出来、回到老路"],
+    ["策略、隐瞒、独自行动","坦白、被看穿"],["被困住、自我限制","松绑、找到出口"],["焦虑、失眠、担心","恐惧消退、愿意求助"],
+    ["低谷、结束","最坏的已经过去"],["警觉、新想法","多疑、说话伤人"],["果断、冲刺","莽撞、口不择言"],
+    ["清醒、独立、直接","刻薄、冷漠"],["理性、公正、有原则","冷酷、操控"]]],
+  ["星币", [
+    ["新机会、踏实的开始","错过机会、计划不稳"],["平衡、忙里应变","顾此失彼、压力大"],["合作、手艺、被认可","配合不好、敷衍"],
+    ["守住、节俭、安全感","吝啬、放不下"],["困顿、被冷落","好转、得到帮助"],["给予、分享、慷慨","不平等、施舍感"],
+    ["耐心、等待收获","急躁、投入没回报"],["专注、练习、精进","敷衍、没热情"],["独立、富足、享受","过度依赖、浮华"],
+    ["长久的安稳、家业","家庭纷争、不稳定"],["学习、新计划、务实","拖延、不切实际"],["稳重、可靠、按部就班","停滞、固执"],
+    ["实际的温柔、照顾、富足","忙到忽略自己"],["成功、稳重、可靠的守护","物质至上、固执"]]],
+];
+const TAROT_RANKS = ["王牌","二","三","四","五","六","七","八","九","十","侍从","骑士","王后","国王"];
+const TAROT_DECK = [
+  ...TAROT_MAJOR.map(([n, up, rev], i) => ({ name: n, no: ["0","I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII","XIII","XIV","XV","XVI","XVII","XVIII","XIX","XX","XXI"][i], up, rev, major: 1 })),
+  ...TAROT_SUITS.flatMap(([s, ms]) => ms.map(([up, rev], i) => ({ name: s + TAROT_RANKS[i], no: s, up, rev }))),
+];
+const LENORMAND = [
+  ["骑士","消息、来访、很快"],["幸运草","小幸运、短暂的机会"],["船","旅行、远方、变动"],["房子","家、安稳、自己的空间"],
+  ["树","健康、成长、慢慢扎根"],["云","迷惑、不确定"],["蛇","复杂、绕路、诱惑"],["棺材","结束、休息、低落"],
+  ["花束","礼物、惊喜、赞美"],["镰刀","突然、果断、切断"],["鞭子","争执、反复、激烈"],["鸟","交谈、紧张、成双"],
+  ["孩子","新开始、单纯、小事"],["狐狸","小心、聪明、工作"],["熊","力量、保护、长辈"],["星星","希望、指引、梦想"],
+  ["鹳","改变、搬迁、进步"],["狗","朋友、忠诚、陪伴"],["塔","独处、规矩、边界"],["花园","聚会、社交、公开"],
+  ["山","阻碍、延迟、挑战"],["十字路口","选择、好几条路"],["老鼠","消耗、担心、流失"],["心","爱、温柔、心意"],
+  ["戒指","承诺、约定"],["书","秘密、学习、未知"],["信","消息、文字、信件"],["男人","他"],
+  ["女人","她"],["百合","平静、成熟、温柔"],["太阳","成功、能量、好运"],["月亮","情绪、感受、被看见"],
+  ["钥匙","答案、打开、确定"],["鱼","金钱、流动、丰盛"],["锚","稳定、坚持、停靠"],["十字架","负担、信念、注定"],
+];
+var Tarot = (function(){
+  const pg = ewPage("tarotPanel", "Tarot");
+  let tab = "tarot", drawn = null;   // drawn = {kind, cards:[{c, rev}], spread, say}
+  const shuffle = (a, rnd = Math.random) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  // 今日运势用：同一天、同一个名字算出来的都一样
+  function seeded(str){ let h = 2166136261; for (const ch of str){ h ^= ch.codePointAt(0); h = Math.imul(h, 16777619); } return () => { h ^= h << 13; h ^= h >>> 17; h ^= h << 5; return ((h >>> 0) % 100000) / 100000; }; }
+  const POS3 = ["过去", "现在", "未来"];
+  function draw(kind, n){
+    const deck = kind === "tarot" ? TAROT_DECK : LENORMAND.map(([name, kw], i) => ({ name, no: String(i + 1), up: kw }));
+    const cards = shuffle(deck).slice(0, n).map(c => ({ c, rev: kind === "tarot" && Math.random() < 0.3 }));
+    drawn = { kind, cards, say: EwCards.pick("tarot") || "" };
+    paint();
+  }
+  const cardHtml = (x, pos, i) => `<div class="tr-card${x.rev ? " rev" : ""}${x.c.major ? " major" : ""}" style="animation-delay:${i * 0.12}s">
+      ${pos ? `<em class="tr-pos">${pos}</em>` : ""}
+      <div class="tr-face"><span class="tr-no">${escapeHtml(x.c.no)}</span><b>${escapeHtml(x.c.name)}</b></div>
+      <div class="tr-mean"><span>${x.rev ? "逆位" : (drawn && drawn.kind === "tarot" ? "正位" : "")}</span>${escapeHtml(x.rev ? x.c.rev : x.c.up)}</div>
+    </div>`;
+  function paintDraw(kind){
+    const mine = drawn && drawn.kind === kind ? drawn : null;
+    const btns = `<div class="tr-btns"><button type="button" class="cl-btn" data-draw="1">抽一张</button><button type="button" class="cl-btn" data-draw="3">抽三张${kind === "tarot" ? "（过去 · 现在 · 未来）" : ""}</button></div>`;
+    if (!mine){
+      pg.body.insertAdjacentHTML("beforeend", `<div class="ew-pad"><textarea class="tr-q" id="trQ" rows="2" placeholder="心里想着一件事，再抽"></textarea>${btns}</div>`);
+      return;
+    }
+    const three = mine.cards.length === 3;
+    pg.body.insertAdjacentHTML("beforeend", `<div class="ew-pad">
+      <div class="tr-row${three ? " three" : ""}">${mine.cards.map((x, i) => cardHtml(x, three && kind === "tarot" ? POS3[i] : "", i)).join("")}</div>
+      ${mine.say ? `<div class="tr-say"><b>${escapeHtml(taName())}</b>${escapeHtml(mine.say)}</div>` : ""}
+      ${btns}</div>`);
+  }
+  function paintToday(){
+    const d = new Date(), rnd = seeded(ewDayKey() + "|" + meName());
+    const star = () => 1 + Math.floor(rnd() * 5);
+    const stars = (n) => "★".repeat(n) + "☆".repeat(5 - n);
+    const items = [["综合", star()], ["爱情", star()], ["学习 · 工作", star()], ["财运", star()], ["心情", star()]];
+    const COLORS = ["奶白","雾蓝","薄荷绿","樱花粉","燕麦色","雾紫","柠檬黄","海盐蓝","焦糖色","墨绿","珊瑚橘","月光银"];
+    const YI = ["早点睡","喝一杯热的","出门走走","听一首老歌","给自己买点小东西","写几行字","跟 TA 说句好听的","晒晒太阳","整理桌面","吃顿好的","看一集喜欢的剧","把想做的事列下来"];
+    const JI = ["熬夜","空腹喝咖啡","想太多","跟自己较劲","拖延","刷手机到半夜","生闷气","乱花钱"];
+    const color = COLORS[Math.floor(rnd() * COLORS.length)], num = 1 + Math.floor(rnd() * 9);
+    const yi = shuffle(YI, rnd).slice(0, 2), ji = shuffle(JI, rnd)[0];
+    const c = TAROT_DECK[Math.floor(rnd() * 22)], rev = rnd() < 0.3;
+    pg.body.insertAdjacentHTML("beforeend", `<div class="ew-pad">
+      <div class="tr-date">${d.getMonth() + 1} 月 ${d.getDate()} 日 · 周${"日一二三四五六"[d.getDay()]}</div>
+      <div class="glass cl-set tr-luck">${items.map(([k, n]) => `<div class="r"><span>${k}</span><span class="tr-stars">${stars(n)}</span></div>`).join("")}
+        <div class="r"><span>幸运色</span><b>${color}</b></div><div class="r"><span>幸运数字</span><b>${num}</b></div>
+        <div class="r"><span>宜</span><b>${yi.join("、")}</b></div><div class="r"><span>忌</span><b>${ji}</b></div></div>
+      <div class="cl-sec ew-sec">今天的牌</div>
+      <div class="tr-row">${cardHtml({ c, rev }, "", 0)}</div></div>`);
+  }
+  function paint(){
+    pg.body.innerHTML = ewTabs([["tarot", "塔罗"], ["leno", "雷诺曼"], ["today", "今日运势"]], tab);
+    if (tab === "today") paintToday(); else paintDraw(tab === "tarot" ? "tarot" : "leno");
+  }
+  pg.body.addEventListener("click", (e) => {
+    const tb = e.target.closest("[data-tab]"); if (tb){ tab = tb.dataset.tab; paint(); return; }
+    const dr = e.target.closest("[data-draw]");
+    if (dr) draw(tab === "tarot" ? "tarot" : "leno", +dr.dataset.draw);
+  });
+  return { open(){ drawn = null; paint(); pg.open(); } };
+})();
+
+/* ── Doodle 涂鸦本：手指画，存进本子（IndexedDB "doodles" = [{id, ts, url}]），或者直接发给 TA ── */
+var Doodle = (function(){
+  const pg = ewPage("doodlePanel", "Doodle");
+  const COLORS = ["#2b2f36", "#e0605a", "#f0a33c", "#f2d046", "#62b07a", "#4f8fd8", "#9a78d0", "#f29bb6", "#ffffff"];
+  let list = [], color = COLORS[0], size = 6, eraser = false, undo = [], cv = null, ctx = null, dpr = 1, drawing = false, last = null, dirty = false;
+  const ready = (async () => { try{ const s = await EwStore.get("doodles"); if (Array.isArray(s)) list = s; }catch(_){} })();
+  const save = () => EwStore.set("doodles", list);
+  pg.body.innerHTML = `<div class="ew-pad dd-wrap">
+      <canvas class="dd-canvas" id="ddCanvas"></canvas>
+      <div class="dd-tools">
+        <div class="dd-colors">${COLORS.map(c => `<button type="button" data-color="${c}" style="background:${c}" aria-label="颜色"></button>`).join("")}</div>
+        <div class="dd-row">
+          ${[3, 6, 12].map(s => `<button type="button" class="dd-size" data-size="${s}"><i style="width:${s + 2}px;height:${s + 2}px"></i></button>`).join("")}
+          <button type="button" class="cl-btn" data-dd="eraser">橡皮</button>
+          <button type="button" class="cl-btn" data-dd="undo">撤销</button>
+          <button type="button" class="cl-btn danger" data-dd="clear">清空</button>
+        </div>
+        <div class="dd-row">
+          <button type="button" class="cl-btn" data-dd="keep">存进本子</button>
+          <button type="button" class="cl-btn dd-go" data-dd="send">发给 TA</button>
+        </div>
+      </div>
+      <div class="cl-sec ew-sec">本子</div>
+      <div class="dd-book" id="ddBook"></div>
+    </div>`;
+  cv = pg.body.querySelector("#ddCanvas"); ctx = cv.getContext("2d");
+  const book = pg.body.querySelector("#ddBook");
+  function paintTools(){
+    pg.body.querySelectorAll("[data-color]").forEach(b => b.classList.toggle("on", !eraser && b.dataset.color === color));
+    pg.body.querySelectorAll("[data-size]").forEach(b => b.classList.toggle("on", +b.dataset.size === size));
+    pg.body.querySelector('[data-dd="eraser"]').classList.toggle("on", eraser);
+  }
+  function paintBook(){
+    book.innerHTML = list.length ? list.map(d => `<div class="dd-page" data-page="${escapeHtml(d.id)}" style="background-image:url('${d.url}')"><button type="button" data-delpage="${escapeHtml(d.id)}" aria-label="删掉">×</button></div>`).join("")
+      : `<div class="cl-empty">还没有存过</div>`;
+  }
+  function blank(){ ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, cv.width, cv.height); ctx.restore(); dirty = false; }
+  function sizeCanvas(){
+    const w = Math.min(pg.body.clientWidth - 32, 520), h = Math.round(w * 1.05);
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    cv.style.width = w + "px"; cv.style.height = h + "px";
+    cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.lineCap = "round"; ctx.lineJoin = "round";
+    blank(); undo = [];
+  }
+  const pt = (e) => { const r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+  cv.addEventListener("pointerdown", (e) => {
+    e.preventDefault(); cv.setPointerCapture(e.pointerId);
+    undo.push(ctx.getImageData(0, 0, cv.width, cv.height)); if (undo.length > 20) undo.shift();
+    drawing = true; last = pt(e);
+    ctx.beginPath(); ctx.fillStyle = eraser ? "#fff" : color; ctx.arc(last.x, last.y, (eraser ? size * 3 : size) / 2, 0, Math.PI * 2); ctx.fill();
+    dirty = true;
+  });
+  cv.addEventListener("pointermove", (e) => {
+    if (!drawing) return;
+    const p = pt(e);
+    ctx.strokeStyle = eraser ? "#fff" : color; ctx.lineWidth = eraser ? size * 3 : size;
+    ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(p.x, p.y); ctx.stroke();
+    last = p;
+  });
+  ["pointerup", "pointercancel", "pointerleave"].forEach(ev => cv.addEventListener(ev, () => { drawing = false; }));
+  const toUrl = () => cv.toDataURL("image/png");
+  function keep(){
+    if (!dirty){ showToast("还没画呢"); return null; }
+    const d = { id: Date.now().toString(36), ts: Date.now(), url: toUrl() };
+    list.unshift(d); save(); paintBook();
+    return d;
+  }
+  async function sendIt(){
+    if (!dirty){ showToast("还没画呢"); return; }
+    const blob = await new Promise(r => cv.toBlob(r, "image/png"));
+    if (!blob) return;
+    if (!list.some(d => d.url === toUrl())) keep();   // 发出去的也留一张在本子里
+    const file = new File([blob], "涂鸦.png", { type: "image/png" });
+    pg.close();
+    if (menuIsOpen){ closeMenu(); openConv(LEGACY_SESSION_ID); }
+    setTimeout(() => sendOneFile(file), 380);
+    blank(); undo = [];
+  }
+  pg.body.addEventListener("click", (e) => {
+    const c = e.target.closest("[data-color]"); if (c){ color = c.dataset.color; eraser = false; paintTools(); return; }
+    const s = e.target.closest("[data-size]"); if (s){ size = +s.dataset.size; paintTools(); return; }
+    const del = e.target.closest("[data-delpage]");
+    if (del){ e.stopPropagation(); if (confirm("删掉这一页？")){ list = list.filter(d => d.id !== del.dataset.delpage); save(); paintBook(); } return; }
+    const page = e.target.closest("[data-page]");
+    if (page){   // 点本子里的一页：拿出来接着画
+      const d = list.find(x => x.id === page.dataset.page); if (!d) return;
+      if (dirty && !confirm("现在画的会被换掉，先存起来吗？取消=不换")) return;
+      const img = new Image();
+      img.onload = () => { blank(); ctx.drawImage(img, 0, 0, cv.width / dpr, cv.height / dpr); dirty = true; undo = []; pg.body.scrollTop = 0; };
+      img.src = d.url; return;
+    }
+    const a = e.target.closest("[data-dd]"); if (!a) return;
+    const k = a.dataset.dd;
+    if (k === "eraser"){ eraser = !eraser; paintTools(); }
+    else if (k === "undo"){ const u = undo.pop(); if (u) ctx.putImageData(u, 0, 0); }
+    else if (k === "clear"){ if (dirty && confirm("清空画布？")){ undo.push(ctx.getImageData(0, 0, cv.width, cv.height)); blank(); } }
+    else if (k === "keep"){ if (keep()) showToast("存进本子了"); }
+    else if (k === "send") sendIt();
+  });
+  return {
+    ready,
+    all: () => list,
+    replaceAll(l){ list = Array.isArray(l) ? l : []; return save(); },
+    async open(){
+      await ready;
+      pg.open();
+      requestAnimationFrame(() => { if (!cv.width || !dirty) sizeCanvas(); paintTools(); paintBook(); });
+    },
+  };
+})();
+
+/* ── 后台通知：手机切到别的 App、网页还没被系统停掉的时候，TA 来消息弹一条通知。
+   没有服务器，网页被关掉 / 被 iPhone 冻住以后就收不到了（这个做不到） ── */
+const EwNotify = (() => {
+  const KEY = "ew_notify";
+  const on = () => { try{ return localStorage.getItem(KEY) === "on"; }catch(_){ return false; } };
+  async function enable(){
+    if (!("Notification" in window)){ showToast("这个浏览器不支持通知，iPhone 要先「添加到主屏幕」再从图标打开", 3200); return false; }
+    let p = Notification.permission;
+    if (p === "default") p = await Notification.requestPermission();
+    if (p !== "granted"){ showToast("没拿到通知权限，要去手机设置里给 Elsewhere 打开", 3000); return false; }
+    try{ localStorage.setItem(KEY, "on"); }catch(_){}
+    return true;
+  }
+  function disable(){ try{ localStorage.setItem(KEY, "off"); }catch(_){} }
+  async function show(title, body){
+    if (!on() || !document.hidden || !("Notification" in window) || Notification.permission !== "granted") return;
+    try{
+      const reg = await Promise.race([navigator.serviceWorker.ready, new Promise((_, no) => setTimeout(no, 2000))]);
+      await reg.showNotification(title, { body, tag: "ew-msg", renotify: true, icon: "./icon-192.png", badge: "./icon-192.png" });
+    }catch(_){ try{ new Notification(title, { body }); }catch(_){} }
+  }
+  return { on, enable, disable, show };
+})();
+
 /* ════════════ 长按气泡 · 复制菜单 (TG 式:遮罩 + 抬起 + 动作条) ════════════ */
 (function setupMessageMenu(){
   const menu = $("#msgMenu");
@@ -9744,6 +10492,8 @@ function refreshMomDot(){
     openKey = info.key;
     const copyBtn = actions.querySelector('[data-act="copy"]');
     if (copyBtn) copyBtn.style.display = info.msg.text ? "" : "none";   // 纯图无文字 → 只留 Delete
+    const favBtn = actions.querySelector('[data-act="fav"]');
+    if (favBtn) favBtn.style.display = (info.msg.text || EwFavs.imgOf(info.msg)) ? "" : "none";
     // 小克的话：多一排表情、多一个「朗读」；她自己的话没有
     const isAiReply = info.side === "ai" && info.msg.kind === "reply" && !!info.msg.text && !USE_MOCK;
     const speakBtn = actions.querySelector('[data-act="speak"]');
@@ -9918,7 +10668,15 @@ function refreshMomDot(){
     else if (act.dataset.act === "quote") doQuote();
     else if (act.dataset.act === "delete") doDelete();
     else if (act.dataset.act === "recall") doRecall();
+    else if (act.dataset.act === "fav") doFav();
   });
+  // 收藏（10-22）：存进 Stats 页的「收藏」里
+  function doFav(){
+    const msg = openKey != null ? messageByKey.get(msgKey(openKey)) : null;
+    close();
+    if (!msg) return;
+    showToast(EwFavs.add(msg) ? "收藏好了，在 Stats 里" : "这条收藏过了");
+  }
   // 卡片排版下面那排小按钮也用这几个
   window.msgMenuApi = { open, copy: (k) => doCopy(k), quote: (k) => doQuote(k) };
   window.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
@@ -10285,6 +11043,8 @@ if (clipBtn && plusPanel){
     else if (what === "file" && clipInput) clipInput.click();
     else if (what === "voice") openVoiceSheet();
     else if (what === "vmsg") openRecSheet();
+    else if (what === "doodle") Doodle.open();
+    else if (EwPoke.ACTS[what]) EwPoke.doIt(what);
   });
   inputEl.addEventListener("focus", () => setPlusPanel(false));
   document.addEventListener("pointerdown", (e) => {
