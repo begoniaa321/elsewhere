@@ -1,6 +1,6 @@
 /* Elsewhere service worker：离线也能打开 + 本地通知点开回到页面。
    改了任何前端文件都要改 CACHE，不然装在桌面上的还是旧的。 */
-const CACHE = "elsewhere-v22";
+const CACHE = "elsewhere-v23";
 const PRECACHE = [
   "./", "./index.html",
   "./chat-light.webp", "./chat-harbor.webp",
@@ -40,6 +40,8 @@ self.addEventListener("fetch", (e) => {
     e.waitUntil(net.catch(() => {}));
     return;
   }
+  // 内置的歌（music/）不进缓存：太大，放歌还要分段下载，交给浏览器自己
+  if (url.pathname.includes("/music/")) return;
   if (e.request.method === "GET" && url.origin === location.origin) {
     e.respondWith(
       caches.match(e.request).then((r) => {

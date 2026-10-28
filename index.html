@@ -11994,9 +11994,13 @@ if (window.visualViewport){
    她在「一起听」点「加歌」从手机文件里挑 mp3（同名 .lrc 一起挑就带上歌词），文件名「歌手 - 歌名」自动拆开。
    kv 里：music_meta = [{id,title,artist,lrc,added}]、mf_<id> = 歌的文件（Blob）、ml_<id> = 歌词、music_lists = [{id,name,songs}]
    下面的播放器还是 LINK 那套，它原来问服务器的 /app/music… 由 api() 转到这里 */
+/* 10-28 她挑了 18 首「内置」进网站（照 milk 的 chat 站把 mp3 放进仓库）：music/list.json = [{id:"b01",title,artist,file,lrc}]，
+   歌直接按网址放、不存进手机；她手动导过同名的就用她那首；删内置的只是藏起来（ew_music_hidden） */
 const EwMusic = (() => {
-  let meta = [], lists = [], loaded = null;
+  let meta = [], lists = [], builtin = [], loaded = null;
   const urls = {};   // id → 播放用的 blob: 地址（打开时一次做好，点歌时同步拿到，iPhone 才肯在点击里直接放）
+  const HIDE_KEY = "ew_music_hidden";
+  const hidden = () => { try{ return new Set(JSON.parse(localStorage.getItem(HIDE_KEY) || "[]")); }catch(_){ return new Set(); } };
   function load(){
     if (loaded) return loaded;
     loaded = (async () => {
@@ -12004,8 +12008,14 @@ const EwMusic = (() => {
       try{ lists = (await EwStore.get("music_lists")) || []; }catch(_){ lists = []; }
       await Promise.all(meta.map(async s => { try{ const b = await EwStore.get("mf_" + s.id); if (b) urls[s.id] = URL.createObjectURL(b); }catch(_){} }));
       meta = meta.filter(s => urls[s.id]);
+      try{ const r = await fetch("music/list.json", { cache: "no-cache" }); if (r.ok) builtin = await r.json(); }catch(_){ builtin = []; }
     })();
     return loaded;
+  }
+  function builtinOut(){
+    const hid = hidden();
+    return builtin.filter(b => !hid.has(b.id) && !meta.some(s => s.title === b.title && s.artist === b.artist))
+      .map(b => ({ id: b.id, title: b.title, artist: b.artist, lrc: !!b.lrc, builtin: 1, url: b.file }));
   }
   const saveMeta = () => EwStore.set("music_meta", meta);
   const saveLists = () => EwStore.set("music_lists", lists);
@@ -12014,7 +12024,7 @@ const EwMusic = (() => {
     const b = base(name), i = b.indexOf(" - ");
     return i > 0 ? { artist: b.slice(0, i).trim(), title: b.slice(i + 3).trim() || b } : { artist: "", title: b };
   }
-  const songsOut = () => meta.map(s => ({ ...s, url: urls[s.id] }));
+  const songsOut = () => builtinOut().concat(meta.map(s => ({ ...s, url: urls[s.id] })));
   // 挑进来一堆文件：歌存起来；.lrc 按文件名配给同名的歌（这次挑的、以前加过的都行）
   async function addFiles(files){
     await load();
@@ -12043,6 +12053,8 @@ const EwMusic = (() => {
   async function removeSongs(ids){
     await load();
     const set = new Set(ids);
+    const hid = hidden(); builtin.forEach(b => { if (set.has(b.id)) hid.add(b.id); });
+    try{ localStorage.setItem(HIDE_KEY, JSON.stringify([...hid])); }catch(_){}
     for (const id of set){ await EwStore.del("mf_" + id); await EwStore.del("ml_" + id); if (urls[id]){ URL.revokeObjectURL(urls[id]); delete urls[id]; } }
     meta = meta.filter(s => !set.has(s.id));
     lists.forEach(l => { l.songs = l.songs.filter(id => !set.has(id)); });
@@ -12054,7 +12066,11 @@ const EwMusic = (() => {
     const method = (opts.method || "GET").toUpperCase(), body = opts.body ? JSON.parse(opts.body) : {};
     let m;
     if (path === "/app/music" && method === "GET") return { songs: songsOut(), lists };
-    if ((m = path.match(/^\/app\/music\/([^/]+)\/lrc$/))) return { lrc: (await EwStore.get("ml_" + m[1])) || "" };
+    if ((m = path.match(/^\/app\/music\/([^/]+)\/lrc$/))){
+      const b = builtin.find(x => x.id === m[1]);
+      if (b){ try{ const r = await fetch(b.lrc); return { lrc: r.ok ? await r.text() : "" }; }catch(_){ return { lrc: "" }; } }
+      return { lrc: (await EwStore.get("ml_" + m[1])) || "" };
+    }
     if (path === "/app/music/now") return {};
     if (path === "/app/music/lists" && method === "POST"){ const l = { id: EwCards.uid(), name: body.name, songs: [] }; lists.push(l); await saveLists(); return l; }
     if ((m = path.match(/^\/app\/music\/lists\/([^/]+)(?:\/(add|remove))?$/))){
