@@ -4406,7 +4406,10 @@ var CardLib = (function(){
       <div class="glass cl-set">
         <div class="r"><span>回信要等（小时）</span><span class="nums">${num("letterMinH", 0, 168)} ~ ${num("letterMaxH", 0, 168)}</span></div>
         <div class="r"><span>一封回信几段</span><span class="nums">${num("letterMinN", 1, 20)} ~ ${num("letterMaxN", 1, 20)}</span></div>
-        <div class="r"><span>TA 主动写信，隔几小时一封<br><small>填 0 就不写</small></span><span class="nums">${num("letterEveryH", 0, 720)}</span></div>
+        <div class="r"><span>TA 主动写信 · 大保底（小时）<br><small>填 0 就不写</small></span><span class="nums">${num("letterEveryH", 0, 720)}</span></div>
+        <div class="r"><span>从第几小时开始涨概率</span><span class="nums">${num("letterSoftH", 0, 720)}</span></div>
+        <div class="r"><span>在那之前每小时的概率（%）</span><span class="nums">${num("letterBasePct", 0, 100)}</span></div>
+        <div class="r"><span>之后每小时加几（%）</span><span class="nums">${num("letterStepPct", 0, 100)}</span></div>
       </div>
       <div class="cl-sec">朋友圈设置</div>
       <div class="glass cl-set">
@@ -4576,10 +4579,11 @@ var CardLib = (function(){
     if (!Number.isFinite(v)) v = REPLY_DEFAULT[k];
     v = Math.max(Number(inp.min), Math.min(Number(inp.max), v));
     c[k] = v;
-    if (k === "letterEveryH") EwLetters.resetAuto();   // 改了间隔就从现在开始算，不会一下子补出好几封
     // 最快不能比最慢还慢
     [["minSec","maxSec"],["minN","maxN"],["proMinMin","proMaxMin"],["letterMinH","letterMaxH"],["letterMinN","letterMaxN"],["composeMinN","composeMaxN"],["momDayMin","momDayMax"],["momCardMin","momCardMax"],["momReactMinMin","momReactMaxMin"]].forEach(([a, b]) => { if (c[a] > c[b]){ if (k === a) c[b] = c[a]; else c[a] = c[b]; } });
-    saveReplyCfg(c); paintHome();
+    saveReplyCfg(c);
+    if (["letterEveryH","letterSoftH","letterBasePct","letterStepPct"].includes(k)) EwLetters.resetAuto(c);   // 改了写信的概率就从现在重新抽，不会一下子补出好几封
+    paintHome();
   });
 
   function exportCards(){
@@ -7086,7 +7090,10 @@ const REPLY_DEFAULT = {
   composeMinN: 2, composeMaxN: 3,                       // 拼句用几张字卡
   composeJoins: ["space","dou","per","ex","q","el","dash"],   // 连接用的标点（跟 mochi 默认一样，换行默认关）
   letterMinH: 1, letterMaxH: 6, // 回信要等多久（小时）
-  letterEveryH: 0,              // TA 隔几小时主动写一封（0 = 不写，她自己填）
+  letterEveryH: 48,             // TA 主动写信的大保底（小时，0 = 不写）。10-28 她定 48
+  letterSoftH: 30,              // 过了这么多小时，来信的机会开始一小时比一小时高
+  letterBasePct: 1,             // 在那之前，每小时来信的机会（%）
+  letterStepPct: 1,             // 过了 letterSoftH 以后，每过一小时机会多几（%）
   momDayMin: 0, momDayMax: 2,   // TA 一天发几条朋友圈
   momCardMin: 1, momCardMax: 2, // 一条用几张字卡
   momLikePct: 80, momCommentPct: 50,   // 她发的，TA 点赞 / 评论的机会（%）
@@ -7103,6 +7110,10 @@ const REPLY_DEFAULT = {
 function replyCfg(){
   let c = {};
   try{ c = JSON.parse(localStorage.getItem(REPLY_KEY) || "{}") || {}; }catch(_){}
+  if (c.letterEveryH !== undefined && c.letterSoftH === undefined){   // 10-28 升级成抽卡写信，她要 48 小时大保底，旧的间隔不留
+    c.letterEveryH = REPLY_DEFAULT.letterEveryH;
+    saveReplyCfg({ ...REPLY_DEFAULT, ...c });
+  }
   return { ...REPLY_DEFAULT, ...c };
 }
 function saveReplyCfg(c){ try{ localStorage.setItem(REPLY_KEY, JSON.stringify(c)); }catch(_){} }
@@ -7340,29 +7351,48 @@ const EwLetters = (() => {
     save();
     return !!reply;
   }
-  // 10-22 她要的：TA 每隔 letterEveryH 小时主动写一封（她自己填，0 = 不写）。上一封的时间存 ew_letter_auto_last；
+  // 10-22 她要的：TA 主动写信（letterEveryH = 0 就不写）。
+  // 10-28 她改成抽卡：上一封之后，前 letterSoftH 小时每小时有 letterBasePct% 的机会来信，之后每过一小时多 letterStepPct%，
+  // 到 letterEveryH 小时（大保底）必来。默认 48/30/1/1：约 26% 提前、12% 吃满大保底、平均 34 小时（模拟 10 万次）。
+  // 下一封的时间在上一封来的时候就抽好，存 ew_letter_auto_next；
   // 手机关着时错过的下次打开补上（时间写成当时），一次最多补 3 封
-  const AUTO_KEY = "ew_letter_auto_last";
-  function catchUpAuto(){
-    const every = Number(replyCfg().letterEveryH) || 0;
-    if (every <= 0) return;
-    let last = Number(localStorage.getItem(AUTO_KEY) || 0);
-    if (!last){ last = now(); try{ localStorage.setItem(AUTO_KEY, String(last)); }catch(_){} return; }
-    const gap = every * 3600e3, due = Math.floor((now() - last) / gap);
-    if (due < 1) return;
-    let made = 0;
-    for (let i = Math.max(1, due - 2); i <= due; i++){   // 错过太多次就只补最近 3 封
-      const body = makeBody(); if (!body) break;
-      list.push({ id: EwCards.uid(), from:"ta", ts: last + i * gap, body, read:false, auto:1 }); made++;
+  const AUTO_KEY = "ew_letter_auto_last", NEXT_KEY = "ew_letter_auto_next";
+  function rollNext(from, c){
+    const hard = Number(c.letterEveryH) || 0;
+    if (hard <= 0) return 0;
+    const soft = Math.min(Number(c.letterSoftH) || 0, hard), base = (Number(c.letterBasePct) || 0) / 100, step = (Number(c.letterStepPct) || 0) / 100;
+    for (let h = 1; h < hard; h++){
+      const p = h <= soft ? base : base + step * (h - soft);
+      if (Math.random() < p) return from + (h - Math.random()) * 3600e3;   // 落在这一小时里随便哪一分钟
     }
-    try{ localStorage.setItem(AUTO_KEY, String(last + due * gap)); }catch(_){}
+    return from + (hard - Math.random()) * 3600e3;   // 大保底
+  }
+  function setNext(from, c){
+    const next = rollNext(from, c);
+    try{ if (next) localStorage.setItem(NEXT_KEY, String(next)); else localStorage.removeItem(NEXT_KEY); }catch(_){}
+    return next;
+  }
+  function catchUpAuto(){
+    const c = replyCfg();
+    if ((Number(c.letterEveryH) || 0) <= 0) return;
+    let next = Number(localStorage.getItem(NEXT_KEY) || 0);
+    if (!next) next = setNext(Number(localStorage.getItem(AUTO_KEY) || 0) || now(), c);   // 第一次 / 从旧的固定间隔升级上来
+    const due = [];
+    while (next <= now()){ due.push(next); next = rollNext(next, c); }
+    if (!due.length) return;
+    let made = 0;
+    for (const ts of due.slice(-3)){   // 错过太多次就只补最近 3 封
+      const body = makeBody(); if (!body) break;
+      list.push({ id: EwCards.uid(), from:"ta", ts, body, read:false, auto:1 }); made++;
+    }
+    try{ localStorage.setItem(AUTO_KEY, String(due[due.length - 1])); localStorage.setItem(NEXT_KEY, String(next)); }catch(_){}
     if (made) save();
   }
   ready.then(catchUpAuto);
   return {
     ready,
     catchUpAuto,
-    resetAuto(){ try{ localStorage.setItem(AUTO_KEY, String(now())); }catch(_){} },   // 改了间隔就从现在开始算
+    resetAuto(c){ const t = now(); try{ localStorage.setItem(AUTO_KEY, String(t)); }catch(_){} setNext(t, c || replyCfg()); },   // 改了设置就从现在开始重新抽
     // 到了时间的，新的在前
     shown: () => list.filter(x => x.ts <= now()).sort((a, b) => b.ts - a.ts),
     pending: () => list.some(x => x.ts > now()),
