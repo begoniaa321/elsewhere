@@ -4380,6 +4380,7 @@ var CardLib = (function(){
       </details>`;
     }).join("");
     body.innerHTML = `
+      <div class="glass cl-set"><div class="r"><span><b>TA 在线</b></span><button type="button" class="cl-on${c.taOn !== false ? " on" : ""}" id="clTaOn">${c.taOn !== false ? "开" : "关"}</button></div></div>
       <div class="cl-sec">每个功能用哪些字卡</div>
       <div class="glass cl-set cl-funcs">${funcs}</div>
       <div class="cl-sec cl-sec-row"><span>分类</span>${cats.length ? `<button type="button" class="cl-pick" data-pk="start">多选</button>` : ""}</div>
@@ -4535,6 +4536,12 @@ var CardLib = (function(){
       const c = EwCards.addCat(name, [...newUses]); paintCat(c.id); return;
     }
     if (t.closest("#clPro")){ const c = replyCfg(); c.proactive = !c.proactive; saveReplyCfg(c); paintHome(); return; }
+    if (t.closest("#clTaOn")){   // 总开关：关上清掉还没到的回信/赞/评论；打开从现在重新算，不补关着那段时间的
+      const c = replyCfg(); c.taOn = c.taOn === false; saveReplyCfg(c);
+      if (c.taOn){ try{ localStorage.setItem("ew_pro_last", String(Date.now())); }catch(_){} EwLetters.resetAuto(c); }
+      else { EwLetters.dropPending(); EwMoments.dropPending(); EwMoments.catchUp(); }
+      paintHome(); return;
+    }
     if (t.closest("#clKeep")){ EwKeepAlive.toggle(); paintHome(); return; }
     if (t.closest("#clNotify")){
       if (EwNotify.on()){ EwNotify.disable(); paintHome(); }
@@ -6206,6 +6213,7 @@ async function presetSave(i, name){
     timerEl.textContent = "呼叫中";
     setQuote("等 " + taCallName() + " 接", { hint: true, dots: true });
     const c = replyCfg();
+    if (!taOn()){ fakeTimer = setTimeout(() => closeCall({ miss: `${taCallName()} 无人接听` }), 30000); return; }   // 总开关关着：打过去没人接
     if (Math.random() * 100 < c.callMissPct){
       if (Math.random() < 0.5){
         const t = taCallName();
@@ -6249,7 +6257,7 @@ async function presetSave(i, name){
     clearTimeout(ringTimer);
     ringTimer = setTimeout(() => {
       const c = replyCfg();
-      if (!open && !incomingOpen && document.visibilityState === "visible" && new Date().getHours() >= 8 && Math.random() * 100 < c.callPct) ringIn();
+      if (taOn() && !open && !incomingOpen && document.visibilityState === "visible" && new Date().getHours() >= 8 && Math.random() * 100 < c.callPct) ringIn();
       armRing();
     }, (15 + Math.random() * 45) * 60e3);
   }
@@ -7084,6 +7092,7 @@ const REPLY_DEFAULT = {
   minSec: 2, maxSec: 20,        // 你说完多久回（秒）
   minN: 1, maxN: 3,             // 一次回几条
   ignorePct: 5,                 // 已读不回（%）
+  taOn: true,                   // 总开关（Cards 页最上面）
   proactive: true,              // TA 主动找你
   proMinMin: 60, proMaxMin: 240,// 隔多久主动找一次（分钟）
   composePct: 30,               // 回话时拼句的概率（%）
@@ -7117,6 +7126,8 @@ function replyCfg(){
   return { ...REPLY_DEFAULT, ...c };
 }
 function saveReplyCfg(c){ try{ localStorage.setItem(REPLY_KEY, JSON.stringify(c)); }catch(_){} }
+// 10-28 她要的总开关：关上以后 TA 什么都不做（不回话、不主动找、不写信回信、不发朋友圈不点赞评论、不打电话、不回戳、不选歌）
+function taOn(){ return replyCfg().taOn !== false; }
 
 const Mock = (() => {
   let messages = [];
@@ -7198,6 +7209,7 @@ const Mock = (() => {
     clearTimeout(replyTimer);
     const c = replyCfg();
     replyTimer = setTimeout(() => {
+      if (!taOn()) return;                                       // 总开关关着
       if (Math.random() * 100 < c.ignorePct) return;            // 已读不回
       const n = Math.max(1, Math.round(rand(c.minN, c.maxN)));
       let i = 0;
@@ -7243,7 +7255,7 @@ const Mock = (() => {
   function nextGapMs(){ const c = replyCfg(); return rand(c.proMinMin, Math.max(c.proMinMin, c.proMaxMin)) * 60e3; }
   function catchUpProactive(){
     const c = replyCfg();
-    if (!c.proactive || !messages.length) return;
+    if (!c.proactive || !taOn() || !messages.length) return;
     let t = Math.max(lastAt(), Number(localStorage.getItem("ew_pro_last") || 0));
     const now = Date.now();
     let made = 0;
@@ -7263,7 +7275,7 @@ const Mock = (() => {
     clearTimeout(proTimer);
     proTimer = setTimeout(() => {
       const c = replyCfg(), h = new Date().getHours();
-      if (c.proactive && h >= 8 && Date.now() - lastAt() > c.proMinMin * 60e3){
+      if (c.proactive && taOn() && h >= 8 && Date.now() - lastAt() > c.proMinMin * 60e3){
         const text = EwCards.pick("proactive");
         if (text){
           if (Math.random() < 0.15) EwPoke.taDoes();   // 偶尔先戳你一下再说话
@@ -7341,12 +7353,12 @@ const EwLetters = (() => {
       const p = EwCards.pick("letter"); if (!p) break;
       if (!paras.includes(p) || i >= n * 2) paras.push(p);
     }
-    return paras.join("\n\n");
+    return paras.join(" ");   // 10-28 她要一句接一句连成一段，不要一句一行
   }
   function write(body){
     const t = now();
     list.push({ id: EwCards.uid(), from:"me", ts:t, body, read:true });
-    const c = replyCfg(), reply = makeBody();
+    const c = replyCfg(), reply = taOn() ? makeBody() : "";
     if (reply) list.push({ id: EwCards.uid(), from:"ta", ts: t + rand(c.letterMinH, Math.max(c.letterMinH, c.letterMaxH)) * 3600e3, body: reply, read:false });
     save();
     return !!reply;
@@ -7374,7 +7386,7 @@ const EwLetters = (() => {
   }
   function catchUpAuto(){
     const c = replyCfg();
-    if ((Number(c.letterEveryH) || 0) <= 0) return;
+    if ((Number(c.letterEveryH) || 0) <= 0 || !taOn()) return;
     let next = Number(localStorage.getItem(NEXT_KEY) || 0);
     if (!next) next = setNext(Number(localStorage.getItem(AUTO_KEY) || 0) || now(), c);   // 第一次 / 从旧的固定间隔升级上来
     const due = [];
@@ -7392,7 +7404,8 @@ const EwLetters = (() => {
   return {
     ready,
     catchUpAuto,
-    resetAuto(c){ const t = now(); try{ localStorage.setItem(AUTO_KEY, String(t)); }catch(_){} setNext(t, c || replyCfg()); },   // 改了设置就从现在开始重新抽
+    resetAuto(c){ const t = now(); try{ localStorage.setItem(AUTO_KEY, String(t)); }catch(_){} setNext(t, c || replyCfg()); },   // 改了设置 / 总开关打开 就从现在开始重新抽
+    dropPending(){ const t = now(), n = list.length; list = list.filter(x => !(x.from === "ta" && x.ts > t)); if (list.length !== n) save(); },   // 总开关关上：还没到的回信不寄了
     // 到了时间的，新的在前
     shown: () => list.filter(x => x.ts <= now()).sort((a, b) => b.ts - a.ts),
     pending: () => list.some(x => x.ts > now()),
@@ -9701,7 +9714,7 @@ function showLetter(it){
   letterShowing = it;
   letterShow("one");
   $("#letterDate").textContent = letterDayTitle(it.ts);
-  $("#letterBody").textContent = it.body;
+  $("#letterBody").textContent = it.from === "ta" ? it.body.replace(/\s*\n+\s*/g, " ") : it.body;   // 以前一句一行的旧信也连起来
   $("#letterSign").textContent = "—— " + (it.from === "ta" ? taName() : meName());
   $("#letterOne").scrollTop = 0;
   letterFoot("返回", it.from === "ta" ? "回一封" : "");
@@ -9858,12 +9871,13 @@ const EwMoments = (() => {
   // 她发了 / 她评论了：TA 的反应现在就定好，ts 放到以后
   function planReact(p){
     const c = replyCfg();
+    if (!taOn()) return;
     if (Math.random() * 100 < c.momLikePct) p.likes.push({ from:"ta", ts: later(p.ts) });
     if (Math.random() * 100 < c.momCommentPct){ const t = EwCards.pickReply(); if (t) p.comments.push({ id: EwCards.uid(), from:"ta", ts: later(p.ts), text: t }); }
   }
   function planReplyTo(p, cm){
     const c = replyCfg();
-    if (Math.random() * 100 >= c.momReplyPct) return;
+    if (!taOn() || Math.random() * 100 >= c.momReplyPct) return;
     const t = EwCards.pickReply(); if (!t) return;
     p.comments.push({ id: EwCards.uid(), from:"ta", ts: later(cm.ts), text: t, to:"me" });
   }
@@ -9871,6 +9885,10 @@ const EwMoments = (() => {
   function catchUp(){
     const c = replyCfg(), t = now();
     let plan = null; try{ plan = JSON.parse(localStorage.getItem("ew_mom_plan") || "null"); }catch(_){}
+    if (!taOn()){   // 总开关关着：今天的计划清空，打开以后也不补发
+      try{ localStorage.setItem("ew_mom_plan", JSON.stringify({ day: dayKey(t), times: [] })); }catch(_){}
+      return 0;
+    }
     let made = 0;
     const flush = (times) => times.filter(ts => {
       if (ts > t) return true;
@@ -9916,6 +9934,11 @@ const EwMoments = (() => {
       save();
     },
     removeComment(id, cid){ const p = list.find(x => x.id === id); if (p){ p.comments = p.comments.filter(c => c.id !== cid); save(); } },
+    dropPending(){   // 总开关关上：TA 还没到时间的赞和评论不来了
+      const t = now(), soon = (x) => !(x.from === "ta" && x.ts > t);
+      list.forEach(p => { p.likes = p.likes.filter(soon); p.comments = p.comments.filter(soon); });
+      save();
+    },
     remove(id){ list = list.filter(x => x.id !== id); save(); },
     all: () => list,
     replaceAll(l){ list = Array.isArray(l) ? l : []; return save(); },
@@ -10181,7 +10204,7 @@ const EwPoke = (() => {
   function doIt(k){
     Mock.notice(`你${ACTS[k]} ${taName()}`);
     clearTimeout(backTimer);
-    if (Math.random() * 100 >= replyCfg().pokeBackPct) return;
+    if (!taOn() || Math.random() * 100 >= replyCfg().pokeBackPct) return;
     backTimer = setTimeout(() => {
       const line = Math.random() < 0.5 ? EwCards.pick("poke") : null;
       if (line) Mock.say(line); else taDoes(Math.random() < 0.6 ? k : null);
@@ -12224,7 +12247,7 @@ const EwMusic = (() => {
   window.addEventListener("pagehide", saveTotal);
   audio.addEventListener("ended", () => {
     if (mode === 1){ audio.currentTime = 0; audio.play().catch(() => {}); return; }
-    if (songs.length > 1 && Math.random() * 100 < replyCfg().musTaPickPct && taPick()) return;   // 这首完了，TA 想选下一首
+    if (songs.length > 1 && taOn() && Math.random() * 100 < replyCfg().musTaPickPct && taPick()) return;   // 这首完了，TA 想选下一首
     step(1);
   });
   audio.addEventListener("error", () => { if (cur && audio.getAttribute("src")) showToast("这首没放出来，换一首试试"); });
@@ -12418,7 +12441,7 @@ const EwMusic = (() => {
     return true;
   }
   $("#mcTa").addEventListener("click", taPick);
-  $("#msTa").addEventListener("click", () => { if (taPick()) closeSheet(); });
+  $("#msTa").addEventListener("click", () => { if (!taOn()){ showToast("TA 不在"); return; } if (taPick()) closeSheet(); });
   $("#msAdd").addEventListener("click", addSongs);
 
   $("#hmPlay").addEventListener("click", togglePlay);
